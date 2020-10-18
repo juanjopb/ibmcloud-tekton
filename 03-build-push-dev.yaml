@@ -102,26 +102,26 @@ spec:
     name: build
     resources: {}
     script: |
-      cat >signfile <<EOF
+      cat >signsample <<EOF
             %echo Generating a basic OpenPGP key
             Key-Type: DSA
             Key-Length: 1024
             Subkey-Type: ELG-E
             Subkey-Length: 1024
-            Name-Real: Joe Tester
-            Name-Comment: with stupid passphrase
-            Name-Email: joe@foo.bar
+            Name-Real: SignSample
+            Name-Email: signsample@foo.bar
             Expire-Date: 0
             Passphrase: abc
-            %pubring foo.pub
-            %secring foo.sec
+            %pubring signsample.pub
+            %secring signsample.sec
             # Do a commit here, so that we can later print "done" :-)
             %commit
             %echo done
       EOF
-      gpg2 --batch --gen-key signfile
+      gpg2 --batch --gen-key signsample
       gpg2 --list-secret-keys
-      gpg2 --no-default-keyring --secret-keyring ./signfile.sec --keyring ./signfile.pub --list-secret-keys
+      gpg2 --no-default-keyring --secret-keyring ./signsample.sec --keyring ./signsample.pub --list-secret-keys
+
       APP_IMAGE="$(params.image-server)/$(params.image-namespace)/$(params.image-repository):$(params.image-tag)"
       buildah --layers --storage-driver=$(params.STORAGE_DRIVER) bud --format=$(params.FORMAT) --tls-verify=$(params.TLSVERIFY) -f $(params.DOCKERFILE) -t ${APP_IMAGE} $(params.CONTEXT)
       set +x
@@ -130,6 +130,7 @@ spec:
         echo "buildah login -u "${REGISTRY_USER}" -p "xxxxx" "$(params.image-server)""
       fi
       set -x
+      atomic push --sign-by signsample@foo.bar --gnupghome /tekton/home/.gnupg ${APP_IMAGE}
       buildah --storage-driver=$(params.STORAGE_DRIVER) push --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} docker://${APP_IMAGE}
     securityContext:
       privileged: true
