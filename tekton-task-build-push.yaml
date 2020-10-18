@@ -1,0 +1,161 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  annotations:
+    app.openshift.io/description: Executes logic to build, tag and push a container
+      image using the intermediate sha tag to the image-url
+    app.openshift.io/vcs-ref: master
+    app.openshift.io/vcs-uri: https://github.com/IBM/ibm-garage-tekton-tasks
+    description: Executes logic to build, tag and push a container image using the
+      intermediate sha tag to the image-url
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"tekton.dev/v1beta1","kind":"Task","metadata":{"annotations":{"app.openshift.io/description":"Executes logic to build, tag and push a container image using the intermediate sha tag to the image-url","app.openshift.io/vcs-ref":"master","app.openshift.io/vcs-uri":"https://github.com/IBM/ibm-garage-tekton-tasks","description":"Executes logic to build, tag and push a container image using the intermediate sha tag to the image-url"},"labels":{"version":"2.0.1"},"name":"ibm-build-tag-push-v2-0-1","namespace":"tools"},"spec":{"params":[{"name":"git-url"},{"default":"master","name":"git-revision"},{"default":"/source","name":"source-dir"},{"default":"","name":"image-server"},{"default":"","name":"image-namespace"},{"default":"","name":"image-repository"},{"default":"","name":"image-tag"},{"default":"quay.io/buildah/stable:v1.15.0","name":"BUILDER_IMAGE"},{"default":"./Dockerfile","name":"DOCKERFILE"},{"default":".","name":"CONTEXT"},{"default":"false","name":"TLSVERIFY"},{"default":"docker","name":"FORMAT"},{"default":"overlay","description":"Set buildah storage driver","name":"STORAGE_DRIVER"}],"stepTemplate":{"volumeMounts":[{"mountPath":"$(params.source-dir)","name":"source"}]},"steps":[{"env":[{"name":"GIT_PASSWORD","valueFrom":{"secretKeyRef":{"key":"password","name":"git-credentials","optional":true}}},{"name":"GIT_USERNAME","valueFrom":{"secretKeyRef":{"key":"username","name":"git-credentials","optional":true}}}],"image":"alpine/git","name":"git-clone","script":"set +x\nif [[ -n \"${GIT_USERNAME}\" ]] \u0026\u0026 [[ -n \"${GIT_PASSWORD}\" ]]; then\n    git clone \"https://${GIT_USERNAME}:${GIT_PASSWORD}@$(echo $(params.git-url) | awk -F 'https://' '{print $2}')\" $(params.source-dir)\nelse\n    set -x\n    git clone $(params.git-url) $(params.source-dir)\nfi\nset -x\ncd $(params.source-dir)\ngit checkout $(params.git-revision)\n"},{"env":[{"name":"REGISTRY_USER","valueFrom":{"secretKeyRef":{"key":"REGISTRY_USER","name":"ibmcloud-apikey","optional":true}}},{"name":"REGISTRY_PASSWORD","valueFrom":{"secretKeyRef":{"key":"APIKEY","name":"ibmcloud-apikey","optional":true}}}],"image":"$(params.BUILDER_IMAGE)","name":"build","script":"APP_IMAGE=\"$(params.image-server)/$(params.image-namespace)/$(params.image-repository):$(params.image-tag)\"\nbuildah --layers --storage-driver=$(params.STORAGE_DRIVER) bud --format=$(params.FORMAT) --tls-verify=$(params.TLSVERIFY) -f $(params.DOCKERFILE) -t ${APP_IMAGE} $(params.CONTEXT)\nset +x\nif [[ -n \"${REGISTRY_USER}\" ]] \u0026\u0026 [[ -n \"${REGISTRY_PASSWORD}\" ]] \u0026\u0026 [[ \"$(params.image-server)\" != \"image-registry.openshift-image-registry.svc:5000\"  ]]; then\n  buildah login -u \"${REGISTRY_USER}\" -p \"${REGISTRY_PASSWORD}\" \"$(params.image-server)\"\n  echo \"buildah login -u \"${REGISTRY_USER}\" -p \"xxxxx\" \"$(params.image-server)\"\"\nfi\nset -x\nbuildah --storage-driver=$(params.STORAGE_DRIVER) push --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} docker://${APP_IMAGE}\n","securityContext":{"privileged":true},"volumeMounts":[{"mountPath":"/var/lib/containers","name":"varlibcontainers"}],"workingdir":"$(params.source-dir)"}],"volumes":[{"emptyDir":{},"name":"varlibcontainers"},{"emptyDir":{},"name":"source"}]}}
+  creationTimestamp: "2020-10-14T16:59:46Z"
+  generation: 1
+  labels:
+    version: 2.0.1
+  managedFields:
+  - apiVersion: tekton.dev/v1alpha1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:app.openshift.io/description: {}
+          f:app.openshift.io/vcs-ref: {}
+          f:app.openshift.io/vcs-uri: {}
+          f:description: {}
+          f:kubectl.kubernetes.io/last-applied-configuration: {}
+        f:labels:
+          .: {}
+          f:version: {}
+      f:spec:
+        .: {}
+        f:params: {}
+        f:stepTemplate:
+          .: {}
+          f:name: {}
+          f:resources: {}
+          f:volumeMounts: {}
+        f:steps: {}
+        f:volumes: {}
+    manager: unknown
+    operation: Update
+    time: "2020-10-14T16:59:46Z"
+  name: ibm-build-tag-push-v2-0-1
+  namespace: dev-freelancer
+  resourceVersion: "6330656"
+  selfLink: /apis/tekton.dev/v1beta1/namespaces/dev-freelancer/tasks/ibm-build-tag-push-v2-0-1
+  uid: 924a191b-638d-4911-8383-8400f69168c4
+spec:
+  params:
+  - name: git-url
+    type: string
+  - default: master
+    name: git-revision
+    type: string
+  - default: /source
+    name: source-dir
+    type: string
+  - default: ""
+    name: image-server
+    type: string
+  - default: ""
+    name: image-namespace
+    type: string
+  - default: ""
+    name: image-repository
+    type: string
+  - default: ""
+    name: image-tag
+    type: string
+  - default: quay.io/buildah/stable:v1.15.0
+    name: BUILDER_IMAGE
+    type: string
+  - default: ./Dockerfile
+    name: DOCKERFILE
+    type: string
+  - default: .
+    name: CONTEXT
+    type: string
+  - default: "false"
+    name: TLSVERIFY
+    type: string
+  - default: docker
+    name: FORMAT
+    type: string
+  - default: overlay
+    description: Set buildah storage driver
+    name: STORAGE_DRIVER
+    type: string
+  stepTemplate:
+    name: ""
+    resources: {}
+    volumeMounts:
+    - mountPath: $(params.source-dir)
+      name: source
+  steps:
+  - env:
+    - name: GIT_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: password
+          name: git-credentials
+          optional: true
+    - name: GIT_USERNAME
+      valueFrom:
+        secretKeyRef:
+          key: username
+          name: git-credentials
+          optional: true
+    image: alpine/git
+    name: git-clone
+    resources: {}
+    script: |
+      set +x
+      if [[ -n "${GIT_USERNAME}" ]] && [[ -n "${GIT_PASSWORD}" ]]; then
+          git clone "https://${GIT_USERNAME}:${GIT_PASSWORD}@$(echo $(params.git-url) | awk -F 'https://' '{print $2}')" $(params.source-dir)
+      else
+          set -x
+          git clone $(params.git-url) $(params.source-dir)
+      fi
+      set -x
+      cd $(params.source-dir)
+      git checkout $(params.git-revision)
+  - env:
+    - name: REGISTRY_USER
+      valueFrom:
+        secretKeyRef:
+          key: REGISTRY_USER
+          name: ibmcloud-apikey
+          optional: true
+    - name: REGISTRY_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: APIKEY
+          name: ibmcloud-apikey
+          optional: true
+    image: $(params.BUILDER_IMAGE)
+    name: build
+    resources: {}
+    script: |
+      APP_IMAGE="$(params.image-server)/$(params.image-namespace)/$(params.image-repository):$(params.image-tag)"
+      buildah --layers --storage-driver=$(params.STORAGE_DRIVER) bud --format=$(params.FORMAT) --tls-verify=$(params.TLSVERIFY) -f $(params.DOCKERFILE) -t ${APP_IMAGE} $(params.CONTEXT)
+      set +x
+      if [[ -n "${REGISTRY_USER}" ]] && [[ -n "${REGISTRY_PASSWORD}" ]] && [[ "$(params.image-server)" != "image-registry.openshift-image-registry.svc:5000"  ]]; then
+        buildah login -u "${REGISTRY_USER}" -p "${REGISTRY_PASSWORD}" "$(params.image-server)"
+        echo "buildah login -u "${REGISTRY_USER}" -p "xxxxx" "$(params.image-server)""
+      fi
+      set -x
+      buildah --storage-driver=$(params.STORAGE_DRIVER) push --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} docker://${APP_IMAGE}
+    securityContext:
+      privileged: true
+    volumeMounts:
+    - mountPath: /var/lib/containers
+      name: varlibcontainers
+    workingDir: $(params.source-dir)
+  volumes:
+  - emptyDir: {}
+    name: varlibcontainers
+  - emptyDir: {}
+    name: source
