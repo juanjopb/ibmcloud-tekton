@@ -40,21 +40,21 @@ spec:
     taskRef:
       kind: Task
       name: ibm-setup-dev-v2-0-1
-  - name: test
-    params:
-    - name: git-url
-      value: $(tasks.setup.results.git-url)
-    - name: git-revision
-      value: $(tasks.setup.results.git-revision)
-    - name: source-dir
-      value: $(tasks.setup.results.source-dir)
-    - name: app-name
-      value: $(tasks.setup.results.app-name)
-    runAfter:
-    - setup
-    taskRef:
-      kind: Task
-      name: ibm-java-gradle-test-v2-0-1
+##  - name: test
+##    params:
+##    - name: git-url
+##      value: $(tasks.setup.results.git-url)
+##    - name: git-revision
+##      value: $(tasks.setup.results.git-revision)
+##    - name: source-dir
+##      value: $(tasks.setup.results.source-dir)
+##    - name: app-name
+##      value: $(tasks.setup.results.app-name)
+##    runAfter:
+##    - setup
+##    taskRef:
+##      kind: Task
+##      name: ibm-java-gradle-test-v2-0-1
   - name: build
     params:
     - name: git-url
@@ -72,7 +72,7 @@ spec:
     - name: image-tag
       value: $(tasks.setup.results.image-tag)
     runAfter:
-    - test
+    - setup
     taskRef:
       kind: Task
       name: ibm-build-tag-push-dev-v2-0-1
