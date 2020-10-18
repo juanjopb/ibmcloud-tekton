@@ -139,6 +139,9 @@ spec:
       buildah --storage-driver=$(params.STORAGE_DRIVER) push --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} docker://${APP_IMAGE}
       skopeo inspect --tls-verify=false docker://${APP_IMAGE}
       sed -i "s/var\/lib\/containers\/sigstore/tekton\/home\/.gnupg\//g" /etc/containers/registries.d/default.yaml
+      cat /etc/containers/registries.d/default.yaml
+      gpg2 --armor --export signsample@foo.bar > sign-sample.pub
+      cat sign-sample.pub
       skopeo --tls-verify=false --insecure-policy --debug copy --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.signed
       
     securityContext:
