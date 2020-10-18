@@ -101,10 +101,28 @@ spec:
           key: APIKEY
           name: ibmcloud-apikey
           optional: true
+    - name: IBM_CLOUD_APIKEY
+      valueFrom:
+        secretKeyRef:
+          key: APIKEY
+          name: ibmcloud-apikey
+          optional: true
+    - name: IBM_CLOUD_REGION
+      valueFrom:
+        configMapKeyRef:
+          name: ibmcloud-config
+          key: REGION
+          optional: true          
     image: $(params.BUILDER_IMAGE)
     name: build
     resources: {}
     script: |
+      curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
+      ibmcloud login --apikey ${IBM_CLOUD_APIKEY} -r ${IBM_CLOUD_REGION}
+      ibmcloud target -r ${IBM_CLOUD_REGION}
+      ibmcloud target -r ${IBM_CLOUD_REGION} -g appdev-cloud-native
+      ibmcloud resource service-instance-create sign-sample kms tiered-pricing ${IBM_CLOUD_REGION}
+      ibmcloud resource service-instances
       yum install skopeo -y
       cat >signsample <<EOF
             %echo Generating a basic OpenPGP key
