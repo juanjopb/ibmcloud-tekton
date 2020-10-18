@@ -102,8 +102,7 @@ spec:
     name: build
     resources: {}
     script: |
-      apk update
-      apk add skopeo
+      yum install skopeo -y
       cat >signsample <<EOF
             %echo Generating a basic OpenPGP key
             Key-Type: DSA
