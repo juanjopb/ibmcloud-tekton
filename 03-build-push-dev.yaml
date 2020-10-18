@@ -1,0 +1,144 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  annotations:
+    app.openshift.io/description: Executes logic to build, tag and push a container
+      image using the intermediate sha tag to the image-url
+    app.openshift.io/vcs-ref: master
+    app.openshift.io/vcs-uri: https://github.com/IBM/ibm-garage-tekton-tasks
+    description: Executes logic to build, tag and push a container image using the
+      intermediate sha tag to the image-url
+  name: ibm-build-tag-push-dev-v2-0-1
+  namespace: dev-freelancer
+spec:
+  params:
+  - name: git-url
+    type: string
+  - default: master
+    name: git-revision
+    type: string
+  - default: /source
+    name: source-dir
+    type: string
+  - default: ""
+    name: image-server
+    type: string
+  - default: ""
+    name: image-namespace
+    type: string
+  - default: ""
+    name: image-repository
+    type: string
+  - default: ""
+    name: image-tag
+    type: string
+  - default: quay.io/buildah/stable:v1.15.0
+    name: BUILDER_IMAGE
+    type: string
+  - default: ./Dockerfile
+    name: DOCKERFILE
+    type: string
+  - default: .
+    name: CONTEXT
+    type: string
+  - default: "false"
+    name: TLSVERIFY
+    type: string
+  - default: docker
+    name: FORMAT
+    type: string
+  - default: overlay
+    description: Set buildah storage driver
+    name: STORAGE_DRIVER
+    type: string
+  stepTemplate:
+    name: ""
+    resources: {}
+    volumeMounts:
+    - mountPath: $(params.source-dir)
+      name: source
+  steps:
+  - env:
+    - name: GIT_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: password
+          name: git-credentials
+          optional: true
+    - name: GIT_USERNAME
+      valueFrom:
+        secretKeyRef:
+          key: username
+          name: git-credentials
+          optional: true
+    image: alpine/git
+    name: git-clone
+    resources: {}
+    script: |
+      set +x
+      if [[ -n "${GIT_USERNAME}" ]] && [[ -n "${GIT_PASSWORD}" ]]; then
+          git clone "https://${GIT_USERNAME}:${GIT_PASSWORD}@$(echo $(params.git-url) | awk -F 'https://' '{print $2}')" $(params.source-dir)
+      else
+          set -x
+          git clone $(params.git-url) $(params.source-dir)
+      fi
+      set -x
+      cd $(params.source-dir)
+      git checkout $(params.git-revision)
+  - env:
+    - name: REGISTRY_USER
+      valueFrom:
+        secretKeyRef:
+          key: REGISTRY_USER
+          name: ibmcloud-apikey
+          optional: true
+    - name: REGISTRY_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: APIKEY
+          name: ibmcloud-apikey
+          optional: true
+    image: $(params.BUILDER_IMAGE)
+    name: build
+    resources: {}
+    script: |
+      cat >signfile <<EOF
+            %echo Generating a basic OpenPGP key
+            Key-Type: DSA
+            Key-Length: 1024
+            Subkey-Type: ELG-E
+            Subkey-Length: 1024
+            Name-Real: Joe Tester
+            Name-Comment: with stupid passphrase
+            Name-Email: joe@foo.bar
+            Expire-Date: 0
+            Passphrase: abc
+            %pubring foo.pub
+            %secring foo.sec
+            # Do a commit here, so that we can later print "done" :-)
+            %commit
+            %echo done
+      EOF
+      gpg2 --batch --gen-key signfile
+      gpg2 --list-secret-keys
+      gpg2 --no-default-keyring --secret-keyring ./signfile.sec --keyring ./signfile.pub --list-secret-keys
+      APP_IMAGE="$(params.image-server)/$(params.image-namespace)/$(params.image-repository):$(params.image-tag)"
+      buildah --layers --storage-driver=$(params.STORAGE_DRIVER) bud --format=$(params.FORMAT) --tls-verify=$(params.TLSVERIFY) -f $(params.DOCKERFILE) -t ${APP_IMAGE} $(params.CONTEXT)
+      set +x
+      if [[ -n "${REGISTRY_USER}" ]] && [[ -n "${REGISTRY_PASSWORD}" ]] && [[ "$(params.image-server)" != "image-registry.openshift-image-registry.svc:5000"  ]]; then
+        buildah login -u "${REGISTRY_USER}" -p "${REGISTRY_PASSWORD}" "$(params.image-server)"
+        echo "buildah login -u "${REGISTRY_USER}" -p "xxxxx" "$(params.image-server)""
+      fi
+      set -x
+      buildah --storage-driver=$(params.STORAGE_DRIVER) push --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} docker://${APP_IMAGE}
+    securityContext:
+      privileged: true
+    volumeMounts:
+    - mountPath: /var/lib/containers
+      name: varlibcontainers
+    workingDir: $(params.source-dir)
+  volumes:
+  - emptyDir: {}
+    name: varlibcontainers
+  - emptyDir: {}
+    name: source

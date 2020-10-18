@@ -39,7 +39,7 @@ spec:
       value: $(params.scan-image)
     taskRef:
       kind: Task
-      name: ibm-setup-v2-0-1
+      name: ibm-setup-dev-v2-0-1
   - name: test
     params:
     - name: git-url
@@ -75,4 +75,4 @@ spec:
     - test
     taskRef:
       kind: Task
-      name: ibm-build-tag-push-v2-0-1
+      name: ibm-build-tag-push-dev-v2-0-1
