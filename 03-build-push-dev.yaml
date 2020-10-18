@@ -128,6 +128,7 @@ spec:
 
       APP_IMAGE="$(params.image-server)/$(params.image-namespace)/$(params.image-repository):$(params.image-tag)"
       APP_RELEASE="$(params.image-release)"
+      NAME_IMAGE="$(params.image-repository):$(params.image-tag)"
       buildah --layers --storage-driver=$(params.STORAGE_DRIVER) bud --format=$(params.FORMAT) --tls-verify=$(params.TLSVERIFY) -f $(params.DOCKERFILE) -t ${APP_IMAGE} $(params.CONTEXT)
       set +x
       if [[ -n "${REGISTRY_USER}" ]] && [[ -n "${REGISTRY_PASSWORD}" ]] && [[ "$(params.image-server)" != "image-registry.openshift-image-registry.svc:5000"  ]]; then
@@ -135,7 +136,9 @@ spec:
         echo "buildah login -u "${REGISTRY_USER}" -p "xxxxx" "$(params.image-server)""
       fi
       set -x
-      skopeo --insecure-policy copy --sign-by signsample@foo.bar ${APP_RELEASE} docker://${APP_IMAGE}
+      skopeo inspect docker://${APP_IMAGE}
+      skopeo inspect docker://${NAME_IMAGE}
+      skopeo --insecure-policy copy --sign-by signsample@foo.bar docker://${NAME_IMAGE} docker://${APP_IMAGE}
       buildah --storage-driver=$(params.STORAGE_DRIVER) push --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} docker://${APP_IMAGE}
     securityContext:
       privileged: true
