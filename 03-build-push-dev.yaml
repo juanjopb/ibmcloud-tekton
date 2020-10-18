@@ -138,7 +138,7 @@ spec:
       set -x
       buildah --storage-driver=$(params.STORAGE_DRIVER) push --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} docker://${APP_IMAGE}
       skopeo inspect --tls-verify=false docker://${APP_IMAGE}
-      skopeo --insecure-policy copy --sign-by signsample@foo.bar docker://${NAME_IMAGE} docker://${APP_IMAGE}
+      skopeo --insecure-policy copy --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.signed
       
     securityContext:
       privileged: true
