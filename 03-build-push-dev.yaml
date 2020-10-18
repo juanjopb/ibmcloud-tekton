@@ -123,6 +123,7 @@ spec:
       ibmcloud target -r ${IBM_CLOUD_REGION} -g appdev-cloud-native
       ibmcloud resource service-instance-create sign-sample kms tiered-pricing ${IBM_CLOUD_REGION}
       ibmcloud resource service-instances
+      curl -X GET \ "https://${IBM_CLOUD_REGION}.kms.cloud.ibm.com/api/v2/keys" \ -H "accept: application/vnd.ibm.collection+json" \ -H "authorization: Bearer ${IBM_CLOUD_APIKEY}" \ -H "bluemix-instance: crn:v1:bluemix:public:kms:us-east:a/0f0adc9ace07413f96e2214f4bc0c40b:763f8d3c-4bd9-4873-974a-1bfa9fac4f2a::"
       yum install skopeo -y
       cat >signsample <<EOF
             %echo Generating a basic OpenPGP key
