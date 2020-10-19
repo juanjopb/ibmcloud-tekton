@@ -168,8 +168,8 @@ spec:
       set -x
       cat ./user_keys/${KEY_NAME}Pub.pem
       buildah --storage-driver=$(params.STORAGE_DRIVER) push --encryption-key jwe:./user_keys/${KEY_NAME}Pub.pem --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} docker://${APP_IMAGE}
-      echo "Delete Image"
-      buildah rmi -f ${APP_IMAGE}
+      #echo "Delete Image"
+      #buildah rmi -f ${APP_IMAGE}
       echo "Pull Image without key"
       buildah pull ${APP_IMAGE} || true
       echo "Pull Image with key"
