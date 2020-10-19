@@ -169,7 +169,8 @@ spec:
         echo "buildah login -u "${REGISTRY_USER}" -p "xxxxx" "$(params.image-server)""
       fi
       set -x
-      buildah --storage-driver=$(params.STORAGE_DRIVER) push --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} docker://${APP_IMAGE} --encryption-key jwe:./user_keys/signsamplePub.pem
+      cat ./user_keys/signsamplePub.pem
+      buildah --storage-driver=$(params.STORAGE_DRIVER) push --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} --encryption-key jwe:./user_keys/signsamplePub.pem docker://${APP_IMAGE}
       skopeo inspect --tls-verify=false docker://${APP_IMAGE}
       #sed -i "s/var\/lib\/containers\/sigstore/tekton\/home\/.gnupg\//g" /etc/containers/registries.d/default.yaml
       #cat /etc/containers/registries.d/default.yaml
