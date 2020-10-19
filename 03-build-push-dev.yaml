@@ -143,10 +143,11 @@ spec:
         openssl rsa -in ${KEY_NAME}Private.pem -pubout -out ${KEY_NAME}Pub.pem
         ls -lrth
         echo "****Base64 Keys"
-        openssl enc -base64 -A -in ${KEY_NAME}Private.pem -out ${KEY_NAME}Private.b64
-        openssl enc -base64 -A -in ${KEY_NAME}Pub.pem -out ${KEY_NAME}Pub.b64
+        openssl enc -base64 -A -in ${KEY_NAME}Private.pem -out ${KEY_NAME}Private.b64 --debug
+        openssl enc -base64 -A -in ${KEY_NAME}Pub.pem -out ${KEY_NAME}Pub.b64 --debug
         cat ${KEY_NAME}Pub.pem; ${KEY_NAME}Pub.b64
         ls -lrth
+        echo "****Create Key's"
         ibmcloud kp key create kp-${KEY_NAME}-private -i ${SERVICE_INSTANCE}
         ibmcloud kp key create kp-${KEY_NAME}-public -i ${SERVICE_INSTANCE}
         PRIVATE_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true )
