@@ -172,14 +172,17 @@ spec:
       cat ./user_keys/signsamplePub.pem
       buildah --storage-driver=$(params.STORAGE_DRIVER) push --encryption-key jwe:./user_keys/signsamplePub.pem --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} docker://${APP_IMAGE}
       skopeo inspect --tls-verify=false docker://${APP_IMAGE}
+      echo "Delete Image"
+      buildah rmi -f ${APP_IMAGE}
+      echo "Pull Image without key"
+      buildah pull ${APP_IMAGE} || true
+      echo "Pull Image with key"
+      buildah pull --decryption-key ./user_keys/signsamplePub.pem ${APP_IMAGE}
       #sed -i "s/var\/lib\/containers\/sigstore/tekton\/home\/.gnupg\//g" /etc/containers/registries.d/default.yaml
       #cat /etc/containers/registries.d/default.yaml
       #gpg2 --armor --export signsample@foo.bar > sign-sample.pub
       #cat sign-sample.pub
       #skopeo --tls-verify=false --insecure-policy --debug copy --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.signed
-      buildah rmi -f ${APP_IMAGE}
-      buildah pull ${APP_IMAGE} || true
-      buildah pull --decryption-key ./user_keys/signsamplePub.pem ${APP_IMAGE}
       
     securityContext:
       privileged: true
