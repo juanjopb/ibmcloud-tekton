@@ -117,33 +117,49 @@ spec:
     name: build
     resources: {}
     script: |
-      KEY_NAME=signsample
-      curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
-      ibmcloud plugin install key-protect -r "IBM Cloud"
-      ibmcloud login --apikey ${IBM_CLOUD_APIKEY} -r ${IBM_CLOUD_REGION}
-      ibmcloud target -r ${IBM_CLOUD_REGION} -g appdev-cloud-native
+      ##curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
+      ##ibmcloud plugin install key-protect -r "IBM Cloud"
+      ##ibmcloud login --apikey ${IBM_CLOUD_APIKEY} -r ${IBM_CLOUD_REGION}
       ##ibmcloud target -r ${IBM_CLOUD_REGION}
-      SERVICE_CREATED=$(ibmcloud resource service-instances | grep ${KEY_NAME}-srv)
-      if [ -z "${SERVICE_CREATED}" ]; then 
-        ibmcloud resource service-instance-create ${KEY_NAME}-srv kms tiered-pricing ${IBM_CLOUD_REGION}
-      else 
-        echo "Service Already Created"
-      fi
-      SERVICE_INSTANCE=$(ibmcloud resource service-instance ${KEY_NAME}-srv --id | grep "::" | awk {'print $2'})
-      echo "List Keys created "
-      ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
-      ##ibmcloud kp create test-${KEY_NAME}-srv --instance-id ${SERVICE_INSTANCE}
+      ##ibmcloud target -r ${IBM_CLOUD_REGION} -g appdev-cloud-native
+      ##SERVICE_CREATED=$(ibmcloud resource service-instances | grep sign-sample)
+      ##if [ -z "${SERVICE_CREATED}" ]; then 
+      ##  ibmcloud resource service-instance-create sign-sample kms tiered-pricing ${IBM_CLOUD_REGION}
+      ##else 
+      ##  echo "Service Already Created"
+      ##fi
+      ##SERVICE_INSTANCE=$(ibmcloud resource service-instance sign-sample --id | grep "::" | awk {'print $2'})
       ##ADMIN_TOKEN=$(ibmcloud iam oauth-tokens | grep IAM | awk '{print($4)}')
+      ##ibmcloud kp create test-sign-sample --instance-id ${SERVICE_INSTANCE}
       ##curl -X GET "https://${IBM_CLOUD_REGION}.kms.cloud.ibm.com/api/v2/keys" -H "accept: application/vnd.ibm.collection+json" -H "authorization: Bearer ${ADMIN_TOKEN}" \ -H "bluemix-instance: ${SERVICE_INSTANCE}"
       
       yum install skopeo -y
+      ####cat >signsample <<EOF
+      ####      %echo Generating a basic OpenPGP key
+      ####      Key-Type: DSA
+      ####      Key-Length: 1024
+      ####      Subkey-Type: ELG-E
+      ####      Subkey-Length: 1024
+      ####      Name-Real: SignSample
+      ####      Name-Email: signsample@foo.bar
+      ####      Expire-Date: 0
+      ####      Passphrase: abc
+      ####      %pubring signsample.pub
+      ####      %secring signsample.sec
+      ####      # Do a commit here, so that we can later print "done" :-)
+      ####      %commit
+      ####      %echo done
+      ####EOF
+      ####gpg2 --batch --gen-key signsample
+      ####gpg2 --list-secret-keys
+      ####gpg2 --no-default-keyring --secret-keyring ./signsample.sec --keyring ./signsample.pub --list-secret-keys
       mkdir user_keys; cd user_keys
-      openssl genrsa --out ${KEY_NAME}Private.pem
-      openssl rsa -in ${KEY_NAME}Private.pem -pubout -out ${KEY_NAME}Pub.pem
-      openssl enc -base64 -A -in ${KEY_NAME}Private.pem -out ${KEY_NAME}Private.b64
-      openssl enc -base64 -A -in ${KEY_NAME}Pub.pem -out ${KEY_NAME}Pub.b64
+      openssl genrsa --out signsamplePrivate.pem
+      openssl rsa -in signsamplePrivate.pem -pubout -out signsamplePub.pem
+      openssl enc -base64 -A -in signsamplePrivate.pem -out signsamplePrivate.b64
+      openssl enc -base64 -A -in signsamplePub.pem -out signsamplePub.b64
       ls -l
-      cat ${KEY_NAME}Pub.pem; cd ..
+      cat signsamplePub.pem; cd ..
 
       APP_IMAGE="$(params.image-server)/$(params.image-namespace)/$(params.image-repository):$(params.image-tag)"
       APP_RELEASE="$(params.image-release)"
@@ -155,15 +171,20 @@ spec:
         echo "buildah login -u "${REGISTRY_USER}" -p "xxxxx" "$(params.image-server)""
       fi
       set -x
-      cat ./user_keys/${KEY_NAME}Pub.pem
-      buildah --storage-driver=$(params.STORAGE_DRIVER) push --encryption-key jwe:./user_keys/${KEY_NAME}Pub.pem --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} docker://${APP_IMAGE}
+      cat ./user_keys/signsamplePub.pem
+      buildah --storage-driver=$(params.STORAGE_DRIVER) push --encryption-key jwe:./user_keys/signsamplePub.pem --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} docker://${APP_IMAGE}
+      skopeo inspect --tls-verify=false docker://${APP_IMAGE}
       echo "Delete Image"
       buildah rmi -f ${APP_IMAGE}
       echo "Pull Image without key"
       buildah pull ${APP_IMAGE} || true
       echo "Pull Image with key"
-      buildah pull --decryption-key ./user_keys/${KEY_NAME}Private.pem ${APP_IMAGE}
-      skopeo inspect --tls-verify=false docker://${APP_IMAGE}
+      buildah pull --decryption-key ./user_keys/signsamplePrivate.pem ${APP_IMAGE}
+      #sed -i "s/var\/lib\/containers\/sigstore/tekton\/home\/.gnupg\//g" /etc/containers/registries.d/default.yaml
+      #cat /etc/containers/registries.d/default.yaml
+      #gpg2 --armor --export signsample@foo.bar > sign-sample.pub
+      #cat sign-sample.pub
+      #skopeo --tls-verify=false --insecure-policy --debug copy --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.signed
       
     securityContext:
       privileged: true
