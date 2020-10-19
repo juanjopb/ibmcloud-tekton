@@ -117,13 +117,22 @@ spec:
     name: build
     resources: {}
     script: |
-      curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
-      ibmcloud login --apikey ${IBM_CLOUD_APIKEY} -r ${IBM_CLOUD_REGION}
-      ibmcloud target -r ${IBM_CLOUD_REGION}
-      ibmcloud target -r ${IBM_CLOUD_REGION} -g appdev-cloud-native
-      ibmcloud resource service-instance-create sign-sample kms tiered-pricing ${IBM_CLOUD_REGION}
-      ibmcloud resource service-instances
-      curl -X GET \ "https://${IBM_CLOUD_REGION}.kms.cloud.ibm.com/api/v2/keys" \ -H "accept: application/vnd.ibm.collection+json" \ -H "authorization: Bearer ${IBM_CLOUD_APIKEY}" \ -H "bluemix-instance: crn:v1:bluemix:public:kms:us-east:a/0f0adc9ace07413f96e2214f4bc0c40b:763f8d3c-4bd9-4873-974a-1bfa9fac4f2a::"
+      ##curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
+      ##ibmcloud plugin install key-protect -r "IBM Cloud"
+      ##ibmcloud login --apikey ${IBM_CLOUD_APIKEY} -r ${IBM_CLOUD_REGION}
+      ##ibmcloud target -r ${IBM_CLOUD_REGION}
+      ##ibmcloud target -r ${IBM_CLOUD_REGION} -g appdev-cloud-native
+      ##SERVICE_CREATED=$(ibmcloud resource service-instances | grep sign-sample)
+      ##if [ -z "${SERVICE_CREATED}" ]; then 
+      ##  ibmcloud resource service-instance-create sign-sample kms tiered-pricing ${IBM_CLOUD_REGION}
+      ##else 
+      ##  echo "Service Already Created"
+      ##fi
+      ##SERVICE_INSTANCE=$(ibmcloud resource service-instance sign-sample --id | grep "::" | awk {'print $2'})
+      ##ADMIN_TOKEN=$(ibmcloud iam oauth-tokens | grep IAM | awk '{print($4)}')
+      ##ibmcloud kp create test-sign-sample --instance-id ${SERVICE_INSTANCE}
+      ##curl -X GET "https://${IBM_CLOUD_REGION}.kms.cloud.ibm.com/api/v2/keys" -H "accept: application/vnd.ibm.collection+json" -H "authorization: Bearer ${ADMIN_TOKEN}" \ -H "bluemix-instance: ${SERVICE_INSTANCE}"
+      
       yum install skopeo -y
       cat >signsample <<EOF
             %echo Generating a basic OpenPGP key
