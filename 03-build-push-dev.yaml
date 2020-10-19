@@ -145,7 +145,7 @@ spec:
         echo "****Base64 Keys"
         openssl enc -base64 -A -in ${KEY_NAME}Private.pem -out ${KEY_NAME}Private.b64
         openssl enc -base64 -A -in ${KEY_NAME}Pub.pem -out ${KEY_NAME}Pub.b64
-        cat ${KEY_NAME}Pub.pem; ${KEY_NAME}Pub.b64; cd ..
+        cat ${KEY_NAME}Pub.pem; ${KEY_NAME}Pub.b64
         ls -lrth
         ibmcloud kp key create kp-${KEY_NAME}-private -i ${SERVICE_INSTANCE}
         ibmcloud kp key create kp-${KEY_NAME}-public -i ${SERVICE_INSTANCE}
@@ -153,12 +153,15 @@ spec:
         PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true )
         PRIVATE_WRAP=$(ibmcloud kp key wrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(cat ${KEY_NAME}Private.b64)" -output json | jq -r '.["Ciphertext"]')
         PUBLIC_WRAP=$(ibmcloud kp key wrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(cat ${KEY_NAME}Pub.b64)" -output json | jq -r '.["Ciphertext"]')
+        cd ..
       else 
+        mkdir user_keys; cd user_keys
         echo "Keys Already Exists, Retriving the information"
         PRIVATE_B64=$(ibmcloud kp key unwrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} ${PRIVATE_WRAP} --output json | jq -r '.["Plaintext"]')
         PUBLIC_B64=$(ibmcloud kp key unwrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} ${PUBLIC_WRAP} --output json | jq -r '.["Plaintext"]')
         openssl enc -base64 -A -d -in ${PRIVATE_B64} -out ${KEY_NAME}Private.pem
         openssl enc -base64 -A -d -in ${PUBLIC_B64} -out ${KEY_NAME}Pub.pem
+        cd ..
       fi
       ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
 
