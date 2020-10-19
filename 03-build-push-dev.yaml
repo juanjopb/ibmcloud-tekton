@@ -118,12 +118,13 @@ spec:
     resources: {}
     script: |
       KEY_NAME=signsample
+      yum install skopeo -y
       curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
       ibmcloud plugin install key-protect -r "IBM Cloud"
       ibmcloud login --apikey ${IBM_CLOUD_APIKEY} -r ${IBM_CLOUD_REGION}
       ibmcloud target -r ${IBM_CLOUD_REGION} -g appdev-cloud-native
       ##ibmcloud target -r ${IBM_CLOUD_REGION}
-      SERVICE_CREATED=$(ibmcloud resource service-instances | grep ${KEY_NAME}-srv)
+      SERVICE_CREATED=$(ibmcloud resource service-instances | grep ${KEY_NAME}-srv || true)
       if [ -z "${SERVICE_CREATED}" ]; then 
         ibmcloud resource service-instance-create ${KEY_NAME}-srv kms tiered-pricing ${IBM_CLOUD_REGION}
       else 
@@ -132,22 +133,31 @@ spec:
       SERVICE_INSTANCE=$(ibmcloud resource service-instance ${KEY_NAME}-srv --id | grep "::" | awk {'print $2'})
       echo "List Keys created "
       ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
+      PRIVATE_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" || true )
+      PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" || true )
       ##ibmcloud kp create test-${KEY_NAME}-srv --instance-id ${SERVICE_INSTANCE}
       ##ADMIN_TOKEN=$(ibmcloud iam oauth-tokens | grep IAM | awk '{print($4)}')
       ##curl -X GET "https://${IBM_CLOUD_REGION}.kms.cloud.ibm.com/api/v2/keys" -H "accept: application/vnd.ibm.collection+json" -H "authorization: Bearer ${ADMIN_TOKEN}" \ -H "bluemix-instance: ${SERVICE_INSTANCE}"
       
-      yum install skopeo -y
-      mkdir user_keys; cd user_keys
-      openssl genrsa --out ${KEY_NAME}Private.pem
-      openssl rsa -in ${KEY_NAME}Private.pem -pubout -out ${KEY_NAME}Pub.pem
-      openssl enc -base64 -A -in ${KEY_NAME}Private.pem -out ${KEY_NAME}Private.b64
-      openssl enc -base64 -A -in ${KEY_NAME}Pub.pem -out ${KEY_NAME}Pub.b64
-      ls -l
-      cat ${KEY_NAME}Pub.pem; cd ..
+      if [ -z "${PRIVATE_KEY}" ] && [ -z "${PUBLIC_KEY}" ] ; then 
+        echo "Creating Keys"
+        mkdir user_keys; cd user_keys
+        openssl genrsa --out ${KEY_NAME}Private.pem
+        openssl rsa -in ${KEY_NAME}Private.pem -pubout -out ${KEY_NAME}Pub.pem
+        openssl enc -base64 -A -in ${KEY_NAME}Private.pem -out ${KEY_NAME}Private.b64
+        openssl enc -base64 -A -in ${KEY_NAME}Pub.pem -out ${KEY_NAME}Pub.b64
+        ls -l
+        cat ${KEY_NAME}Pub.pem; cd ..
+        ibmcloud kp create kp-${KEY_NAME}-private -i ${SERVICE_INSTANCE} --key-material ${KEY_NAME}Private.b64
+        ibmcloud kp create kp-${KEY_NAME}-public -i ${SERVICE_INSTANCE} --key-material ${KEY_NAME}Pub.b64
+      else 
+        echo "Keys Already Exists, Retriving the information"
+      fi
+      ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
 
       APP_IMAGE="$(params.image-server)/$(params.image-namespace)/$(params.image-repository):$(params.image-tag)"
-      APP_RELEASE="$(params.image-release)"
-      NAME_IMAGE="$(params.image-repository):$(params.image-tag)"
+      #APP_RELEASE="$(params.image-release)"
+      #NAME_IMAGE="$(params.image-repository):$(params.image-tag)"
       buildah --layers --storage-driver=$(params.STORAGE_DRIVER) bud --format=$(params.FORMAT) --tls-verify=$(params.TLSVERIFY) -f $(params.DOCKERFILE) -t ${APP_IMAGE} $(params.CONTEXT)
       set +x
       if [[ -n "${REGISTRY_USER}" ]] && [[ -n "${REGISTRY_PASSWORD}" ]] && [[ "$(params.image-server)" != "image-registry.openshift-image-registry.svc:5000"  ]]; then
