@@ -170,7 +170,7 @@ spec:
       fi
       set -x
       cat ./user_keys/signsamplePub.pem
-      buildah --storage-driver=$(params.STORAGE_DRIVER) push --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} --encryption-key=jwe:./user_keys/signsamplePub.pem docker://${APP_IMAGE}
+      buildah --storage-driver=$(params.STORAGE_DRIVER) push --encryption-key jwe:./user_keys/signsamplePub.pem --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} docker://${APP_IMAGE}
       skopeo inspect --tls-verify=false docker://${APP_IMAGE}
       #sed -i "s/var\/lib\/containers\/sigstore/tekton\/home\/.gnupg\//g" /etc/containers/registries.d/default.yaml
       #cat /etc/containers/registries.d/default.yaml
