@@ -149,8 +149,8 @@ spec:
         openssl enc -base64 -A -in ${KEY_NAME}Pub.pem -out ${KEY_NAME}Pub.b64
         ls -l
         cat ${KEY_NAME}Pub.pem; cd ..
-        ibmcloud kp key create kp-${KEY_NAME}-private --key-material ${KEY_NAME}Private.b64
-        ibmcloud kp key create kp-${KEY_NAME}-public --key-material ${KEY_NAME}Pub.b64
+        ibmcloud kp key create kp-${KEY_NAME}-private -i ${SERVICE_INSTANCE} --key-material ${KEY_NAME}Private.b64
+        ibmcloud kp key create kp-${KEY_NAME}-public -i ${SERVICE_INSTANCE} --key-material ${KEY_NAME}Pub.b64
       else 
         echo "Keys Already Exists, Retriving the information"
       fi
