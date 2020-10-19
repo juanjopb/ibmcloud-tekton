@@ -117,6 +117,7 @@ spec:
     name: build
     resources: {}
     script: |
+      #!/bin/bash
       KEY_NAME=signsample
       yum install skopeo -y
       curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
@@ -133,8 +134,8 @@ spec:
       SERVICE_INSTANCE=$(ibmcloud resource service-instance ${KEY_NAME}-srv --id | grep "::" | awk {'print $2'})
       echo "List Keys created "
       ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
-      PRIVATE_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" || true )
-      PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" || true )
+      PRIVATE_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true )
+      PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true )
       ##ibmcloud kp create test-${KEY_NAME}-srv --instance-id ${SERVICE_INSTANCE}
       ##ADMIN_TOKEN=$(ibmcloud iam oauth-tokens | grep IAM | awk '{print($4)}')
       ##curl -X GET "https://${IBM_CLOUD_REGION}.kms.cloud.ibm.com/api/v2/keys" -H "accept: application/vnd.ibm.collection+json" -H "authorization: Bearer ${ADMIN_TOKEN}" \ -H "bluemix-instance: ${SERVICE_INSTANCE}"
