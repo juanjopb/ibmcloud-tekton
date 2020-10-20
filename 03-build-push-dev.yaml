@@ -119,8 +119,10 @@ spec:
     script: |
       #!/bin/bash
       KEY_NAME=$(params.image-namespace)
-      yum install skopeo jq kubectl -y
+      yum install skopeo jq -y
+      curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
       curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
+      chmod +x ./kubectl; sudo mv ./kubectl /usr/local/bin/kubectl; kubectl version --client
       ibmcloud plugin install key-protect -r "IBM Cloud"
       ibmcloud login --apikey ${IBM_CLOUD_APIKEY} -r ${IBM_CLOUD_REGION}
       ibmcloud target -r ${IBM_CLOUD_REGION} -g appdev-cloud-native
@@ -157,6 +159,7 @@ spec:
         PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true )
         PRIVATE_WRAP=$(ibmcloud kp key wrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(cat ${KEY_NAME}Private.b64)" -output json | jq -r '.["Ciphertext"]')
         PUBLIC_WRAP=$(ibmcloud kp key wrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(cat ${KEY_NAME}Pub.b64)" -output json | jq -r '.["Ciphertext"]')
+        kubectl create secret generic ${KEY_NAME}-publickey --from-literal=name=${KEY_NAME}-publickey--from-file=publicKey=${KEY_NAME}Pub.pub
         cd ..
       else 
         mkdir user_keys; cd user_keys
