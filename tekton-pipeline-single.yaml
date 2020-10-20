@@ -8,38 +8,14 @@ spec:
   - description: The url for the git repository
     name: git-url
     type: string
-  - default: master
-    description: The git revision (branch, tag, or sha) that should be built
-    name: git-revision
-    type: string
-  - default: ""
-    description: The dev image (use image-release for released image)
-    name: image-url
-    type: string
-  - default: ""
-    description: The url of final released image
-    name: image-release
-    type: string
-  - default: "false"
-    description: Flag indicating that a Vulnerability Advisor scan should be performed
-    name: scan-image
-    type: string
   tasks:
   - name: setup
     params:
     - name: git-url
       value: $(params.git-url)
-    - name: git-revision
-      value: $(params.git-revision)
-    - name: image-url
-      value: $(params.image-url)
-    - name: image-release
-      value: $(params.image-release)
-    - name: scan-image
-      value: $(params.scan-image)
     taskRef:
       kind: Task
-      name: ibm-setup-test-v2-0-1
+      name: ibm-single-test
 ##  - name: test
 ##    params:
 ##    - name: git-url
