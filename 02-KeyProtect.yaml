@@ -115,22 +115,22 @@ spec:
           optional: true
     - name: KP_PUBLIC
       valueFrom:
-        configMapKeyRef:
+        secretKeyRef:
           name: keyprotect-publickey
           key: KP_PUBLIC
           optional: true
-    - name: KP_WRAP_PUBLIC
+    - name: KEYPROTECT_WRAP_PUBLIC
       valueFrom:
-        configMapKeyRef:
+        secretKeyRef:
           name: keyprotect-wrap-public
           key: KP_WRAP_PUBLIC
           optional: true
-    - name: KP_WRAP_PRIV
+    - name: KEYPROTECT_WRAP_PRIVATE
       valueFrom:
-        configMapKeyRef:
+        secretKeyRef:
           name: keyprotect-wrap-private
           key: KP_WRAP_PRIV
-          optional: true          
+          optional: true     
     image: $(params.BUILDER_IMAGE)
     name: build
     resources: {}
@@ -179,18 +179,18 @@ spec:
         PUBLIC_WRAP=$(ibmcloud kp key wrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(cat ${KEY_NAME}Pub.b64)" -output json | jq -r '.["Ciphertext"]')
         echo "${PRIVATE_WRAP}" > PRIVATE_WRAP.pem
         echo "${PUBLIC_WRAP}" > PUBLIC_WRAP.pub
-        kubectl create secret generic keyprotect-publickey --from-literal=KP_PUBLIC=keyprotect-publickey --from-file=publicKey=${KEY_NAME}Pub.pub
-        kubectl create secret generic keyprotect-wrap-public --from-literal=KP_WRAP_PUBLIC=keyprotect-wrap-public --from-file=publicKey=PRIVATE_WRAP.pem
-        kubectl create secret generic keyprotect-wrap-private --from-literal=KP_WRAP_PRIV=keyprotect-wrap-private --from-file=publicKey=PUBLIC_WRAP.pub
+        kubectl create secret generic keyprotect-publickey --from-file=KP_PUBLIC=${KEY_NAME}Pub.pub
+        kubectl create secret generic keyprotect-wrap-public --from-file=KP_WRAP_PUBLIC=PRIVATE_WRAP.pem
+        kubectl create secret generic keyprotect-wrap-private --from-file=KP_WRAP_PRIV=PUBLIC_WRAP.pub
         cd ..
       else 
         mkdir user_keys; cd user_keys
         echo "Keys Already Exists, Retriving the information"
-        PRIVATE_B64=$(ibmcloud kp key unwrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} ${PRIVATE_WRAP} --output json | jq -r '.["Plaintext"]')
-        PUBLIC_B64=$(ibmcloud kp key unwrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} ${PUBLIC_WRAP} --output json | jq -r '.["Plaintext"]')
+        PRIVATE_B64=$(ibmcloud kp key unwrap ${KEYPROTECT_WRAP_PRIVATE} --instance-id ${SERVICE_INSTANCE} ${PRIVATE_WRAP} --output json | jq -r '.["Plaintext"]')
+        PUBLIC_B64=$(ibmcloud kp key unwrap ${KEYPROTECT_WRAP_PUBLIC} --instance-id ${SERVICE_INSTANCE} ${PUBLIC_WRAP} --output json | jq -r '.["Plaintext"]')
         openssl enc -base64 -A -d -in ${PRIVATE_B64} -out ${KEY_NAME}Private.pem
         openssl enc -base64 -A -d -in ${PUBLIC_B64} -out ${KEY_NAME}Pub.pub
-        kubectl create secret generic ${KEY_NAME}-publickey --from-literal=name=${KEY_NAME}-publickey--from-file=publicKey=${KEY_NAME}Pub.pub
+        kubectl create secret generic keyprotect-publickey --from-file=KP_PUBLIC=${KEY_NAME}Pub.pub
         cd ..
       fi
       ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
