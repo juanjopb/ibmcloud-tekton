@@ -119,7 +119,7 @@ spec:
     script: |
       #!/bin/bash
       KEY_NAME=$(params.image-namespace)
-      yum install skopeo jq -y
+      yum install skopeo jq kubectl -y
       curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
       ibmcloud plugin install key-protect -r "IBM Cloud"
       ibmcloud login --apikey ${IBM_CLOUD_APIKEY} -r ${IBM_CLOUD_REGION}
@@ -140,12 +140,15 @@ spec:
         echo "****Creating Keys"
         mkdir user_keys; cd user_keys
         openssl genrsa --out ${KEY_NAME}Private.pem
-        openssl rsa -in ${KEY_NAME}Private.pem -pubout -out ${KEY_NAME}Pub.pem
+        openssl rsa -in ${KEY_NAME}Private.pem -pubout -out ${KEY_NAME}Pub.pub
         ls -lrth; sleep 20
         echo "****Base64 Keys"
         openssl enc -base64 -A -in ${KEY_NAME}Private.pem -out ${KEY_NAME}Private.b64 --debug
-        openssl enc -base64 -A -in ${KEY_NAME}Pub.pem -out ${KEY_NAME}Pub.b64 --debug
-        cat ${KEY_NAME}Pub.pem; ${KEY_NAME}Pub.b64
+        openssl enc -base64 -A -in ${KEY_NAME}Pub.pub -out ${KEY_NAME}Pub.b64 --debug
+        echo "****Private Key's"
+        cat ${KEY_NAME}Pub.pub; cat ${KEY_NAME}Pub.b64
+        echo "****Pub Key's"
+        cat ${KEY_NAME}Private.pem; cat ${KEY_NAME}Private.b64
         ls -lrth
         echo "****Create Key's"
         ibmcloud kp key create kp-${KEY_NAME}-private -i ${SERVICE_INSTANCE}
@@ -161,7 +164,8 @@ spec:
         PRIVATE_B64=$(ibmcloud kp key unwrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} ${PRIVATE_WRAP} --output json | jq -r '.["Plaintext"]')
         PUBLIC_B64=$(ibmcloud kp key unwrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} ${PUBLIC_WRAP} --output json | jq -r '.["Plaintext"]')
         openssl enc -base64 -A -d -in ${PRIVATE_B64} -out ${KEY_NAME}Private.pem
-        openssl enc -base64 -A -d -in ${PUBLIC_B64} -out ${KEY_NAME}Pub.pem
+        openssl enc -base64 -A -d -in ${PUBLIC_B64} -out ${KEY_NAME}Pub.pub
+        kubectl create secret generic ${KEY_NAME}-publickey --from-literal=name=${KEY_NAME}-publickey--from-file=publicKey=${KEY_NAME}Pub.pub
         cd ..
       fi
       ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
@@ -174,8 +178,8 @@ spec:
         echo "buildah login -u "${REGISTRY_USER}" -p "xxxxx" "$(params.image-server)""
       fi
       set -x
-      cat ./user_keys/${KEY_NAME}Pub.pem
-      buildah --storage-driver=$(params.STORAGE_DRIVER) push --encryption-key jwe:./user_keys/${KEY_NAME}Pub.pem --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} docker://${APP_IMAGE}
+      cat ./user_keys/${KEY_NAME}Pub.pub
+      buildah --storage-driver=$(params.STORAGE_DRIVER) push --encryption-key jwe:./user_keys/${KEY_NAME}Pub.pub --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} docker://${APP_IMAGE}
       #echo "Delete Image"
       #buildah rmi -f ${APP_IMAGE}
       echo "Pull Image without key"
