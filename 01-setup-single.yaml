@@ -127,30 +127,6 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        - name: GIT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: password
-              name: git-credentials
-              optional: true
-        - name: GIT_USERNAME
-          valueFrom:
-            secretKeyRef:
-              key: username
-              name: git-credentials
-              optional: true
-        - name: REGISTRY_RELEASE_SERVER
-          valueFrom:
-            configMapKeyRef:
-              key: REGISTRY_URL
-              name: ibmcloud-config
-              optional: true
-        - name: REGISTRY_RELEASE_NAMESPACE
-          valueFrom:
-            configMapKeyRef:
-              key: REGISTRY_NAMESPACE
-              name: ibmcloud-config
-              optional: true
       image: alpine/git
       name: git-clone
       resources: {}
