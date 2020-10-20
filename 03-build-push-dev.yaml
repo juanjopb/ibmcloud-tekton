@@ -115,19 +115,19 @@ spec:
           optional: true
     - name: KP_PUBLIC
       valueFrom:
-        configMapKeyRef:
+        secretKeyRef:
           name: keyprotect-publickey
           key: KP_PUBLIC
           optional: true
-    - name: KP_WRAP_PUBLIC
+    - name: KEYPROTECT_WRAP_PUBLIC
       valueFrom:
-        configMapKeyRef:
+        secretKeyRef:
           name: keyprotect-wrap-public
           key: KP_WRAP_PUBLIC
           optional: true
-    - name: KP_WRAP_PRIV
+    - name: KEYPROTECT_WRAP_PRIVATE
       valueFrom:
-        configMapKeyRef:
+        secretKeyRef:
           name: keyprotect-wrap-private
           key: KP_WRAP_PRIV
           optional: true          
@@ -156,12 +156,12 @@ spec:
       ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public"
       echo "****Base64 Keys"
       echo "****+++++WRAP PUBLIC"
-      echo "${KP_WRAP_PUBLIC}"
+      echo "${KEYPROTECT_WRAP_PUBLIC}"
       echo "****+++++WRAP PRIVATE"
-      echo "${KP_WRAP_PRIV}"
+      echo "${KEYPROTECT_WRAP_PRIVATE}"
       echo "****+++++Export to variables"
-      PRIVATE_B64=$(ibmcloud kp key unwrap ${KP_WRAP_PUBLIC} --instance-id ${SERVICE_INSTANCE} ${PRIVATE_WRAP} --output json | jq -r '.["Plaintext"]')
-      PUBLIC_B64=$(ibmcloud kp key unwrap ${KP_WRAP_PRIV} --instance-id ${SERVICE_INSTANCE} ${PUBLIC_WRAP} --output json | jq -r '.["Plaintext"]')
+      PRIVATE_B64=$(ibmcloud kp key unwrap ${KEYPROTECT_WRAP_PUBLIC} --instance-id ${SERVICE_INSTANCE} ${PRIVATE_WRAP} --output json | jq -r '.["Plaintext"]')
+      PUBLIC_B64=$(ibmcloud kp key unwrap ${KEYPROTECT_WRAP_PRIVATE} --instance-id ${SERVICE_INSTANCE} ${PUBLIC_WRAP} --output json | jq -r '.["Plaintext"]')
       echo "${PRIVATE_B64}"
       echo "${PUBLIC_B64}"
       ls -lrth
