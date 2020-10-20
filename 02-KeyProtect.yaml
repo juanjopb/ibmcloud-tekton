@@ -189,10 +189,13 @@ spec:
         echo "Keys Already Exists, Retriving the information"
         ibmcloud kp key unwrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PRIVATE} --output json | jq -r '.["Plaintext"]' > PRIVATE_B64.b64
         ibmcloud kp key unwrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PUBLIC} --output json | jq -r '.["Plaintext"]' > PUBLIC_B64.b64
+        ls -lrth
         openssl enc -base64 -A -d -in PRIVATE_B64.b64 -out ${KEY_NAME}Private.pem
         openssl enc -base64 -A -d -in PUBLIC_B64.b64 -out ${KEY_NAME}Pub.pub
+        ls -lrth
       fi
       ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
+      cd ..
       
     securityContext:
       privileged: true
