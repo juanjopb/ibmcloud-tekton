@@ -123,13 +123,13 @@ spec:
       valueFrom:
         secretKeyRef:
           name: keyprotect-wrap-public
-          key: KP_WRAP_PUBLIC
+          key: publicKey
           optional: true
     - name: KEYPROTECT_WRAP_PRIVATE
       valueFrom:
         secretKeyRef:
           name: keyprotect-wrap-private
-          key: KP_WRAP_PRIV
+          key: privateKey
           optional: true          
     image: $(params.BUILDER_IMAGE)
     name: build
@@ -138,13 +138,12 @@ spec:
       #!/bin/bash
       KEY_NAME=$(params.image-namespace)
       yum install skopeo jq -y
-      ##curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
       curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
-      ##chmod +x ./kubectl; sudo mv ./kubectl /usr/local/bin/kubectl; kubectl version --client
       mkdir user_keys; cd user_keys
       ibmcloud plugin install key-protect -r "IBM Cloud"
       ibmcloud login --apikey ${IBM_CLOUD_APIKEY} -r ${IBM_CLOUD_REGION}
-      ibmcloud target -r ${IBM_CLOUD_REGION} -g appdev-cloud-native
+      #ibmcloud target -r ${IBM_CLOUD_REGION} -g appdev-cloud-native
+      ibmcloud target -r ${IBM_CLOUD_REGION}
       ls -lrth
       echo "****Service Instance"
       SERVICE_INSTANCE=$(ibmcloud resource service-instance ${KEY_NAME}-srv --id | grep "::" | awk {'print $2'})
@@ -154,12 +153,12 @@ spec:
       echo "****Getting ID PUBLIC Key"
       PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true )
       ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public"
-      echo "****Base64 Keys"
-      echo "****+++++WRAP PUBLIC"
-      echo "${KEYPROTECT_WRAP_PUBLIC}"
-      echo "****+++++WRAP PRIVATE"
-      echo "${KEYPROTECT_WRAP_PRIVATE}"
-      echo "****+++++Export to variables"
+      #echo "****Base64 Keys"
+      #echo "****+++++WRAP PUBLIC"
+      #echo "${KEYPROTECT_WRAP_PUBLIC}"
+      #echo "****+++++WRAP PRIVATE"
+      #echo "${KEYPROTECT_WRAP_PRIVATE}"
+      #echo "****+++++Export to variables"
       ibmcloud kp key unwrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PRIVATE} --output json | jq -r '.["Plaintext"]' > PRIVATE_B64.b64
       ibmcloud kp key unwrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PUBLIC} --output json | jq -r '.["Plaintext"]' > PUBLIC_B64.b64
       ls -lrth

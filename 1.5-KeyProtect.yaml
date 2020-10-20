@@ -123,16 +123,16 @@ spec:
       valueFrom:
         secretKeyRef:
           name: keyprotect-wrap-public
-          key: KP_WRAP_PUBLIC
+          key: publicKey
           optional: true
     - name: KEYPROTECT_WRAP_PRIVATE
       valueFrom:
         secretKeyRef:
           name: keyprotect-wrap-private
-          key: KP_WRAP_PRIV
+          key: privateKey
           optional: true     
     image: $(params.BUILDER_IMAGE)
-    name: build
+    name: create_keys
     resources: {}
     script: |
       #!/bin/bash
@@ -182,8 +182,8 @@ spec:
         ibmcloud kp key wrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(cat ${KEY_NAME}Private.b64)" --output json | jq -r '.["Ciphertext"]' > PRIVATE_WRAP.pem
         ibmcloud kp key wrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(cat ${KEY_NAME}Pub.b64)" --output json | jq -r '.["Ciphertext"]' > PUBLIC_WRAP.pub
         kubectl create secret generic keyprotect-publickey --from-file=KP_PUBLIC=${KEY_NAME}Pub.pub
-        kubectl create secret generic keyprotect-wrap-public --from-file=KP_WRAP_PUBLIC=PUBLIC_WRAP.pub
-        kubectl create secret generic keyprotect-wrap-private --from-file=KP_WRAP_PRIV=PRIVATE_WRAP.pem
+        kubectl create secret generic keyprotect-wrap-public --from-file=publicKey=PUBLIC_WRAP.pub
+        kubectl create secret generic keyprotect-wrap-private --from-file=privateKey=PRIVATE_WRAP.pem
       else 
         mkdir user_keys; cd user_keys
         echo "Keys Already Exists, Retriving the information"
