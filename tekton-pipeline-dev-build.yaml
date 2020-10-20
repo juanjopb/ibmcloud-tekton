@@ -97,7 +97,7 @@ spec:
     - name: image-release
       value: $(tasks.setup.results.image-release)      
     runAfter:
-    - image-enforcement
+    - keyprotect
     taskRef:
       kind: Task
       name: ibm-build-tag-push-dev-v2-0-1
