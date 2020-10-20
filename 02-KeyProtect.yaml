@@ -173,16 +173,16 @@ spec:
         echo "****Create Key's"
         ibmcloud kp key create kp-${KEY_NAME}-private -i ${SERVICE_INSTANCE}
         ibmcloud kp key create kp-${KEY_NAME}-public -i ${SERVICE_INSTANCE}
-        echo "***** PRINT KP PRIVATE"
-        ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private"
-        ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'}
-        ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true
-        echo "***** PRINT KP PRIVATE"
-        ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public"
-        ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'}
-        ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true
-        echo "***** PRINT KP BOTH"
-        ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
+        ##echo "***** PRINT KP PRIVATE"
+        ##ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private"
+        ##ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'}
+        ##ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true
+        ##echo "***** PRINT KP PRIVATE"
+        ##ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public"
+        ##ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'}
+        ##ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true
+        ##echo "***** PRINT KP BOTH"
+        ##ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
         echo "***** GET VALUES"
         PRIVATE_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true)
         echo "PRIVATE_KEY"

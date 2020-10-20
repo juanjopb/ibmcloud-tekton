@@ -160,8 +160,8 @@ spec:
       echo "****+++++WRAP PRIVATE"
       echo "${KEYPROTECT_WRAP_PRIVATE}"
       echo "****+++++Export to variables"
-      PRIVATE_B64=$(ibmcloud kp key unwrap ${KEYPROTECT_WRAP_PUBLIC} --instance-id ${SERVICE_INSTANCE} ${PRIVATE_WRAP} --output json | jq -r '.["Plaintext"]')
-      PUBLIC_B64=$(ibmcloud kp key unwrap ${KEYPROTECT_WRAP_PRIVATE} --instance-id ${SERVICE_INSTANCE} ${PUBLIC_WRAP} --output json | jq -r '.["Plaintext"]')
+      PRIVATE_B64=$(ibmcloud kp key unwrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PRIVATE} --output json | jq -r '.["Plaintext"]')
+      PUBLIC_B64=$(ibmcloud kp key unwrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PUBLIC} --output json | jq -r '.["Plaintext"]')
       echo "${PRIVATE_B64}"
       echo "${PUBLIC_B64}"
       ls -lrth
