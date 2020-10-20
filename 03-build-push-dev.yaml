@@ -8,7 +8,7 @@ metadata:
     app.openshift.io/vcs-uri: https://github.com/IBM/ibm-garage-tekton-tasks
     description: Executes logic to build, tag and push a container image using the
       intermediate sha tag to the image-url
-  name: ibm-build-tag-push-test-v2-0-1
+  name: ibm-build-tag-push-dev-v2-0-1
   namespace: dev-freelancer
 spec:
   params:

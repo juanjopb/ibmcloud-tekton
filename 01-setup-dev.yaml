@@ -10,7 +10,7 @@ metadata:
     description: >-
       Sets up the pipeline environment and generates/normalizes a number of
       param values
-  name: ibm-setup-test-v2-0-1      
+  name: ibm-setup-dev-v2-0-1      
   namespace: dev-freelancer
   labels:
     version: 2.0.1

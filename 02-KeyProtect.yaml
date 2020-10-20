@@ -8,7 +8,7 @@ metadata:
     app.openshift.io/vcs-uri: https://github.com/IBM/ibm-garage-tekton-tasks
     description: Executes logic to build, tag and push a container image using the
       intermediate sha tag to the image-url
-  name: ibm-keyprotect-test-v2-0-1
+  name: ibm-keyprotect-dev-v2-0-1
   namespace: dev-freelancer
 spec:
   params:
@@ -166,15 +166,23 @@ spec:
         openssl enc -base64 -A -in ${KEY_NAME}Private.pem -out ${KEY_NAME}Private.b64
         openssl enc -base64 -A -in ${KEY_NAME}Pub.pub -out ${KEY_NAME}Pub.b64
         echo "****Private Key's"
-        cat ${KEY_NAME}Pub.pub; cat ${KEY_NAME}Pub.b64
-        echo "****Pub Key's"
         cat ${KEY_NAME}Private.pem; cat ${KEY_NAME}Private.b64
+        echo "****Public Key's"
+        cat ${KEY_NAME}Pub.pub; cat ${KEY_NAME}Pub.b64
         ls -lrth
         echo "****Create Key's"
         ibmcloud kp key create kp-${KEY_NAME}-private -i ${SERVICE_INSTANCE}
         ibmcloud kp key create kp-${KEY_NAME}-public -i ${SERVICE_INSTANCE}
+        echo "***** PRINT KP PRIVATE"
+        ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private"
+        echo "***** PRINT KP PRIVATE"
+        ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public"
+        echo "***** PRINT KP BOTH"
+        ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
+        echo "***** GET VALUES"
         PRIVATE_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true )
         PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true )
+        echo "***** WRAPPING"
         PRIVATE_WRAP=$(ibmcloud kp key wrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(cat ${KEY_NAME}Private.b64)" -output json | jq -r '.["Ciphertext"]')
         PUBLIC_WRAP=$(ibmcloud kp key wrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(cat ${KEY_NAME}Pub.b64)" -output json | jq -r '.["Ciphertext"]')
         echo "${PRIVATE_WRAP}" > PRIVATE_WRAP.pem
