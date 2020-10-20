@@ -55,7 +55,7 @@ spec:
 ##    taskRef:
 ##      kind: Task
 ##      name: ibm-java-gradle-test-v2-0-1
-  - name: build
+  - name: keyprotect
     params:
     - name: git-url
       value: $(tasks.setup.results.git-url)
@@ -75,6 +75,29 @@ spec:
       value: $(tasks.setup.results.image-release)      
     runAfter:
     - setup
+    taskRef:
+      kind: Task
+      name: ibm-keyprotect-dev-v2-0-1
+  - name: build
+    params:
+    - name: git-url
+      value: $(tasks.setup.results.git-url)
+    - name: git-revision
+      value: $(tasks.setup.results.git-revision)
+    - name: source-dir
+      value: $(tasks.setup.results.source-dir)
+    - name: image-server
+      value: $(tasks.setup.results.image-server)
+    - name: image-namespace
+      value: $(tasks.setup.results.image-namespace)
+    - name: image-repository
+      value: $(tasks.setup.results.image-repository)
+    - name: image-tag
+      value: $(tasks.setup.results.image-tag)
+    - name: image-release
+      value: $(tasks.setup.results.image-release)      
+    runAfter:
+    - keyprotect
     taskRef:
       kind: Task
       name: ibm-build-tag-push-dev-v2-0-1

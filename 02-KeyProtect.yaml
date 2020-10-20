@@ -8,7 +8,7 @@ metadata:
     app.openshift.io/vcs-uri: https://github.com/IBM/ibm-garage-tekton-tasks
     description: Executes logic to build, tag and push a container image using the
       intermediate sha tag to the image-url
-  name: ibm-build-tag-push-dev-v2-0-1
+  name: ibm-keyprotect-dev-v2-0-1
   namespace: dev-freelancer
 spec:
   params:
@@ -138,56 +138,62 @@ spec:
       #!/bin/bash
       KEY_NAME=$(params.image-namespace)
       yum install skopeo jq -y
-      ##curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
+      curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
       curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
-      ##chmod +x ./kubectl; sudo mv ./kubectl /usr/local/bin/kubectl; kubectl version --client
-      mkdir user_keys; cd user_keys
+      chmod +x ./kubectl; sudo mv ./kubectl /usr/local/bin/kubectl; kubectl version --client
       ibmcloud plugin install key-protect -r "IBM Cloud"
       ibmcloud login --apikey ${IBM_CLOUD_APIKEY} -r ${IBM_CLOUD_REGION}
       ibmcloud target -r ${IBM_CLOUD_REGION} -g appdev-cloud-native
+      SERVICE_CREATED=$(ibmcloud resource service-instances | grep ${KEY_NAME}-srv || true)
+      if [ -z "${SERVICE_CREATED}" ]; then 
+        ibmcloud resource service-instance-create ${KEY_NAME}-srv kms tiered-pricing ${IBM_CLOUD_REGION}
+      else 
+        echo "****Service Already Created"
+      fi
       SERVICE_INSTANCE=$(ibmcloud resource service-instance ${KEY_NAME}-srv --id | grep "::" | awk {'print $2'})
+      echo "****List Keys created "
+      ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
       PRIVATE_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true )
       PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true )
-      PRIVATE_B64=$(ibmcloud kp key unwrap ${KP_WRAP_PUBLIC} --instance-id ${SERVICE_INSTANCE} ${PRIVATE_WRAP} --output json | jq -r '.["Plaintext"]')
-      PUBLIC_B64=$(ibmcloud kp key unwrap ${KP_WRAP_PRIV} --instance-id ${SERVICE_INSTANCE} ${PUBLIC_WRAP} --output json | jq -r '.["Plaintext"]')
-      openssl enc -base64 -A -d -in ${PRIVATE_B64} -out ${KEY_NAME}Private.pem
-      openssl enc -base64 -A -d -in ${PUBLIC_B64} -out ${KEY_NAME}Pub.pub
-      cd ..
-      ##
-      ##if [ -z "${PRIVATE_KEY}" ] && [ -z "${PUBLIC_KEY}" ] ; then 
-      ##  echo "****Creating Keys"
-      ##  mkdir user_keys; cd user_keys
-      ##  openssl genrsa --out ${KEY_NAME}Private.pem
-      ##  openssl rsa -in ${KEY_NAME}Private.pem -pubout -out ${KEY_NAME}Pub.pub
-      ##  ls -lrth; sleep 20
-      ##  echo "****Base64 Keys"
-      ##  openssl enc -base64 -A -in ${KEY_NAME}Private.pem -out ${KEY_NAME}Private.b64
-      ##  openssl enc -base64 -A -in ${KEY_NAME}Pub.pub -out ${KEY_NAME}Pub.b64
-      ##  echo "****Private Key's"
-      ##  cat ${KEY_NAME}Pub.pub; cat ${KEY_NAME}Pub.b64
-      ##  echo "****Pub Key's"
-      ##  cat ${KEY_NAME}Private.pem; cat ${KEY_NAME}Private.b64
-      ##  ls -lrth
-      ##  echo "****Create Key's"
-      ##  ibmcloud kp key create kp-${KEY_NAME}-private -i ${SERVICE_INSTANCE}
-      ##  ibmcloud kp key create kp-${KEY_NAME}-public -i ${SERVICE_INSTANCE}
-      ##  PRIVATE_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true )
-      ##  PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true )
-      ##  PRIVATE_WRAP=$(ibmcloud kp key wrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(cat ${KEY_NAME}Private.b64)" -output json | jq -r '.["Ciphertext"]')
-      ##  PUBLIC_WRAP=$(ibmcloud kp key wrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(cat ${KEY_NAME}Pub.b64)" -output json | jq -r '.["Ciphertext"]')
-      ##  echo "${PRIVATE_WRAP}" > PRIVATE_WRAP.pem
-      ##  echo "${PUBLIC_WRAP}" > PUBLIC_WRAP.pub
-      ##  kubectl create secret generic keyprotect-publickey --from-literal=KP_PUBLIC=keyprotect-publickey --from-file=publicKey=${KEY_NAME}Pub.pub
-      ##  kubectl create secret generic keyprotect-wrap-public --from-literal=KP_WRAP_PUBLIC=keyprotect-wrap-public --from-file=publicKey=PRIVATE_WRAP.pem
-      ##  kubectl create secret generic keyprotect-wrap-private --from-literal=KP_WRAP_PRIV=keyprotect-wrap-private --from-file=publicKey=PUBLIC_WRAP.pub
-      ##  cd ..
-      ##else 
-      ##  mkdir user_keys; cd user_keys
-      ##  echo "Keys Already Exists, Retriving the information"
-      ##  kubectl create secret generic ${KEY_NAME}-publickey --from-literal=name=${KEY_NAME}-publickey--from-file=publicKey=${KEY_NAME}Pub.pub
-      ##  cd ..
-      ##fi
-      ##ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
+      
+      if [ -z "${PRIVATE_KEY}" ] && [ -z "${PUBLIC_KEY}" ] ; then 
+        echo "****Creating Keys"
+        mkdir user_keys; cd user_keys
+        openssl genrsa --out ${KEY_NAME}Private.pem
+        openssl rsa -in ${KEY_NAME}Private.pem -pubout -out ${KEY_NAME}Pub.pub
+        ls -lrth; sleep 20
+        echo "****Base64 Keys"
+        openssl enc -base64 -A -in ${KEY_NAME}Private.pem -out ${KEY_NAME}Private.b64
+        openssl enc -base64 -A -in ${KEY_NAME}Pub.pub -out ${KEY_NAME}Pub.b64
+        echo "****Private Key's"
+        cat ${KEY_NAME}Pub.pub; cat ${KEY_NAME}Pub.b64
+        echo "****Pub Key's"
+        cat ${KEY_NAME}Private.pem; cat ${KEY_NAME}Private.b64
+        ls -lrth
+        echo "****Create Key's"
+        ibmcloud kp key create kp-${KEY_NAME}-private -i ${SERVICE_INSTANCE}
+        ibmcloud kp key create kp-${KEY_NAME}-public -i ${SERVICE_INSTANCE}
+        PRIVATE_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true )
+        PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true )
+        PRIVATE_WRAP=$(ibmcloud kp key wrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(cat ${KEY_NAME}Private.b64)" -output json | jq -r '.["Ciphertext"]')
+        PUBLIC_WRAP=$(ibmcloud kp key wrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(cat ${KEY_NAME}Pub.b64)" -output json | jq -r '.["Ciphertext"]')
+        echo "${PRIVATE_WRAP}" > PRIVATE_WRAP.pem
+        echo "${PUBLIC_WRAP}" > PUBLIC_WRAP.pub
+        kubectl create secret generic keyprotect-publickey --from-literal=KP_PUBLIC=keyprotect-publickey --from-file=publicKey=${KEY_NAME}Pub.pub
+        kubectl create secret generic keyprotect-wrap-public --from-literal=KP_WRAP_PUBLIC=keyprotect-wrap-public --from-file=publicKey=PRIVATE_WRAP.pem
+        kubectl create secret generic keyprotect-wrap-private --from-literal=KP_WRAP_PRIV=keyprotect-wrap-private --from-file=publicKey=PUBLIC_WRAP.pub
+        cd ..
+      else 
+        mkdir user_keys; cd user_keys
+        echo "Keys Already Exists, Retriving the information"
+        PRIVATE_B64=$(ibmcloud kp key unwrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} ${PRIVATE_WRAP} --output json | jq -r '.["Plaintext"]')
+        PUBLIC_B64=$(ibmcloud kp key unwrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} ${PUBLIC_WRAP} --output json | jq -r '.["Plaintext"]')
+        openssl enc -base64 -A -d -in ${PRIVATE_B64} -out ${KEY_NAME}Private.pem
+        openssl enc -base64 -A -d -in ${PUBLIC_B64} -out ${KEY_NAME}Pub.pub
+        kubectl create secret generic ${KEY_NAME}-publickey --from-literal=name=${KEY_NAME}-publickey--from-file=publicKey=${KEY_NAME}Pub.pub
+        cd ..
+      fi
+      ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
 
       APP_IMAGE="$(params.image-server)/$(params.image-namespace)/$(params.image-repository):$(params.image-tag)"
       buildah --layers --storage-driver=$(params.STORAGE_DRIVER) bud --format=$(params.FORMAT) --tls-verify=$(params.TLSVERIFY) -f $(params.DOCKERFILE) -t ${APP_IMAGE} $(params.CONTEXT)
