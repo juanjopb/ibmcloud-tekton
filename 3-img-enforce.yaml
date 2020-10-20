@@ -79,7 +79,7 @@ spec:
       script: |
         echo "INITIALIZING helm with client-only (no Tiller)"
         helm init --client-only 1> /dev/null 2> /dev/null
-        echo $(helm version --client)
+        helm version --client
         helm repo add iks-charts https://icr.io/helm/iks-charts
 
         #helm install cise iks-charts/ibmcloud-image-enforcement
