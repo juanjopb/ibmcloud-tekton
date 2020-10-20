@@ -141,7 +141,7 @@ spec:
         mkdir user_keys; cd user_keys
         openssl genrsa --out ${KEY_NAME}Private.pem
         openssl rsa -in ${KEY_NAME}Private.pem -pubout -out ${KEY_NAME}Pub.pem
-        ls -lrth
+        ls -lrth; sleep 20
         echo "****Base64 Keys"
         openssl enc -base64 -A -in ${KEY_NAME}Private.pem -out ${KEY_NAME}Private.b64 --debug
         openssl enc -base64 -A -in ${KEY_NAME}Pub.pem -out ${KEY_NAME}Pub.b64 --debug
