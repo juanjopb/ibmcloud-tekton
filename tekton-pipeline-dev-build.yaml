@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: test-signing-sample-spring
+  name: dev-signing-sample-spring
   namespace: dev-freelancer
 spec:
   params:

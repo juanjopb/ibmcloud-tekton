@@ -1,0 +1,103 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: test-signing-sample-spring
+  namespace: dev-freelancer
+spec:
+  params:
+  - description: The url for the git repository
+    name: git-url
+    type: string
+  - default: master
+    description: The git revision (branch, tag, or sha) that should be built
+    name: git-revision
+    type: string
+  - default: ""
+    description: The dev image (use image-release for released image)
+    name: image-url
+    type: string
+  - default: ""
+    description: The url of final released image
+    name: image-release
+    type: string
+  - default: "false"
+    description: Flag indicating that a Vulnerability Advisor scan should be performed
+    name: scan-image
+    type: string
+  tasks:
+  - name: setup
+    params:
+    - name: git-url
+      value: $(params.git-url)
+    - name: git-revision
+      value: $(params.git-revision)
+    - name: image-url
+      value: $(params.image-url)
+    - name: image-release
+      value: $(params.image-release)
+    - name: scan-image
+      value: $(params.scan-image)
+    taskRef:
+      kind: Task
+      name: ibm-setup-test-v2-0-1
+##  - name: test
+##    params:
+##    - name: git-url
+##      value: $(tasks.setup.results.git-url)
+##    - name: git-revision
+##      value: $(tasks.setup.results.git-revision)
+##    - name: source-dir
+##      value: $(tasks.setup.results.source-dir)
+##    - name: app-name
+##      value: $(tasks.setup.results.app-name)
+##    runAfter:
+##    - setup
+##    taskRef:
+##      kind: Task
+##      name: ibm-java-gradle-test-v2-0-1
+##  - name: keyprotect
+##    params:
+##    - name: git-url
+##      value: $(tasks.setup.results.git-url)
+##    - name: git-revision
+##      value: $(tasks.setup.results.git-revision)
+##    - name: source-dir
+##      value: $(tasks.setup.results.source-dir)
+##    - name: image-server
+##      value: $(tasks.setup.results.image-server)
+##    - name: image-namespace
+##      value: $(tasks.setup.results.image-namespace)
+##    - name: image-repository
+##      value: $(tasks.setup.results.image-repository)
+##    - name: image-tag
+##      value: $(tasks.setup.results.image-tag)
+##    - name: image-release
+##      value: $(tasks.setup.results.image-release)      
+##    runAfter:
+##    - setup
+##    taskRef:
+##      kind: Task
+##      name: ibm-keyprotect-test-v2-0-1
+##  - name: build
+##    params:
+##    - name: git-url
+##      value: $(tasks.setup.results.git-url)
+##    - name: git-revision
+##      value: $(tasks.setup.results.git-revision)
+##    - name: source-dir
+##      value: $(tasks.setup.results.source-dir)
+##    - name: image-server
+##      value: $(tasks.setup.results.image-server)
+##    - name: image-namespace
+##      value: $(tasks.setup.results.image-namespace)
+##    - name: image-repository
+##      value: $(tasks.setup.results.image-repository)
+##    - name: image-tag
+##      value: $(tasks.setup.results.image-tag)
+##    - name: image-release
+##      value: $(tasks.setup.results.image-release)      
+##    runAfter:
+##    - keyprotect
+##    taskRef:
+##      kind: Task
+##      name: ibm-build-tag-push-test-v2-0-1
