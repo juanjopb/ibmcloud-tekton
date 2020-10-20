@@ -195,23 +195,23 @@ spec:
       fi
       ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
 
-      APP_IMAGE="$(params.image-server)/$(params.image-namespace)/$(params.image-repository):$(params.image-tag)"
-      buildah --layers --storage-driver=$(params.STORAGE_DRIVER) bud --format=$(params.FORMAT) --tls-verify=$(params.TLSVERIFY) -f $(params.DOCKERFILE) -t ${APP_IMAGE} $(params.CONTEXT)
-      set +x
-      if [[ -n "${REGISTRY_USER}" ]] && [[ -n "${REGISTRY_PASSWORD}" ]] && [[ "$(params.image-server)" != "image-registry.openshift-image-registry.svc:5000"  ]]; then
-        buildah login -u "${REGISTRY_USER}" -p "${REGISTRY_PASSWORD}" "$(params.image-server)"
-        echo "buildah login -u "${REGISTRY_USER}" -p "xxxxx" "$(params.image-server)""
-      fi
-      set -x
-      cat ./user_keys/${KEY_NAME}Pub.pub
-      buildah --storage-driver=$(params.STORAGE_DRIVER) push --encryption-key jwe:./user_keys/${KEY_NAME}Pub.pub --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} docker://${APP_IMAGE}
-      #echo "Delete Image"
-      #buildah rmi -f ${APP_IMAGE}
-      echo "Pull Image without key"
-      buildah pull ${APP_IMAGE} || true
-      echo "Pull Image with key"
-      buildah pull --decryption-key ./user_keys/${KEY_NAME}Private.pem ${APP_IMAGE}
-      skopeo inspect --tls-verify=false docker://${APP_IMAGE}
+      ##APP_IMAGE="$(params.image-server)/$(params.image-namespace)/$(params.image-repository):$(params.image-tag)"
+      ##buildah --layers --storage-driver=$(params.STORAGE_DRIVER) bud --format=$(params.FORMAT) --tls-verify=$(params.TLSVERIFY) -f $(params.DOCKERFILE) -t ${APP_IMAGE} $(params.CONTEXT)
+      ##set +x
+      ##if [[ -n "${REGISTRY_USER}" ]] && [[ -n "${REGISTRY_PASSWORD}" ]] && [[ "$(params.image-server)" != "image-registry.openshift-image-registry.svc:5000"  ]]; then
+      ##  buildah login -u "${REGISTRY_USER}" -p "${REGISTRY_PASSWORD}" "$(params.image-server)"
+      ##  echo "buildah login -u "${REGISTRY_USER}" -p "xxxxx" "$(params.image-server)""
+      ##fi
+      ##set -x
+      ##cat ./user_keys/${KEY_NAME}Pub.pub
+      ##buildah --storage-driver=$(params.STORAGE_DRIVER) push --encryption-key jwe:./user_keys/${KEY_NAME}Pub.pub --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} docker://${APP_IMAGE}
+      ###echo "Delete Image"
+      ###buildah rmi -f ${APP_IMAGE}
+      ##echo "Pull Image without key"
+      ##buildah pull ${APP_IMAGE} || true
+      ##echo "Pull Image with key"
+      ##buildah pull --decryption-key ./user_keys/${KEY_NAME}Private.pem ${APP_IMAGE}
+      ##skopeo inspect --tls-verify=false docker://${APP_IMAGE}
       
     securityContext:
       privileged: true

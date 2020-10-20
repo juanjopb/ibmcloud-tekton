@@ -145,13 +145,30 @@ spec:
       ibmcloud plugin install key-protect -r "IBM Cloud"
       ibmcloud login --apikey ${IBM_CLOUD_APIKEY} -r ${IBM_CLOUD_REGION}
       ibmcloud target -r ${IBM_CLOUD_REGION} -g appdev-cloud-native
+      ls -lrth
+      echo "****Service Instance"
       SERVICE_INSTANCE=$(ibmcloud resource service-instance ${KEY_NAME}-srv --id | grep "::" | awk {'print $2'})
+      echo "****Getting ID PRIVATE Key"
       PRIVATE_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true )
+      ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private"
+      echo "****Getting ID PUBLIC Key"
       PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true )
+      ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public"
+      echo "****Base64 Keys"
+      echo "****+++++WRAP PUBLIC"
+      echo "${KP_WRAP_PUBLIC}"
+      echo "****+++++WRAP PRIVATE"
+      echo "${KP_WRAP_PRIV}"
+      echo "****+++++Export to variables"
       PRIVATE_B64=$(ibmcloud kp key unwrap ${KP_WRAP_PUBLIC} --instance-id ${SERVICE_INSTANCE} ${PRIVATE_WRAP} --output json | jq -r '.["Plaintext"]')
       PUBLIC_B64=$(ibmcloud kp key unwrap ${KP_WRAP_PRIV} --instance-id ${SERVICE_INSTANCE} ${PUBLIC_WRAP} --output json | jq -r '.["Plaintext"]')
+      echo "${PRIVATE_B64}"
+      echo "${PUBLIC_B64}"
+      ls -lrth
+      echo "****Base64 Keys"
       openssl enc -base64 -A -d -in ${PRIVATE_B64} -out ${KEY_NAME}Private.pem
       openssl enc -base64 -A -d -in ${PUBLIC_B64} -out ${KEY_NAME}Pub.pub
+      ls -lrth
       cd ..
       ##
       ##if [ -z "${PRIVATE_KEY}" ] && [ -z "${PUBLIC_KEY}" ] ; then 
