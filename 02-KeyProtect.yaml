@@ -173,57 +173,26 @@ spec:
         echo "****Create Key's"
         ibmcloud kp key create kp-${KEY_NAME}-private -i ${SERVICE_INSTANCE}
         ibmcloud kp key create kp-${KEY_NAME}-public -i ${SERVICE_INSTANCE}
-        ##echo "***** PRINT KP PRIVATE"
-        ##ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private"
-        ##ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'}
-        ##ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true
-        ##echo "***** PRINT KP PRIVATE"
-        ##ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public"
-        ##ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'}
-        ##ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true
-        ##echo "***** PRINT KP BOTH"
-        ##ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
         echo "***** GET VALUES"
         PRIVATE_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true)
         echo "PRIVATE_KEY"
         PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true )
         echo "PUBLIC_KEY"
         echo "***** WRAPPING"
-        PRIVATE_WRAP=$(ibmcloud kp key wrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(cat ${KEY_NAME}Private.b64)" --output json | jq -r '.["Ciphertext"]')
-        PUBLIC_WRAP=$(ibmcloud kp key wrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(cat ${KEY_NAME}Pub.b64)" --output json | jq -r '.["Ciphertext"]')
-        echo "${PRIVATE_WRAP}" > PRIVATE_WRAP.pem
-        echo "${PUBLIC_WRAP}" > PUBLIC_WRAP.pub
+        ibmcloud kp key wrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(cat ${KEY_NAME}Private.b64)" --output json | jq -r '.["Ciphertext"]' > PRIVATE_WRAP.pem
+        ibmcloud kp key wrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(cat ${KEY_NAME}Pub.b64)" --output json | jq -r '.["Ciphertext"]' > PUBLIC_WRAP.pub
         kubectl create secret generic keyprotect-publickey --from-file=KP_PUBLIC=${KEY_NAME}Pub.pub
         kubectl create secret generic keyprotect-wrap-public --from-file=KP_WRAP_PUBLIC=PUBLIC_WRAP.pub
         kubectl create secret generic keyprotect-wrap-private --from-file=KP_WRAP_PRIV=PRIVATE_WRAP.pem
       else 
         mkdir user_keys; cd user_keys
         echo "Keys Already Exists, Retriving the information"
-        PRIVATE_B64=$(ibmcloud kp key unwrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PRIVATE} --output json | jq -r '.["Plaintext"]')
-        PUBLIC_B64=$(ibmcloud kp key unwrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PUBLIC} --output json | jq -r '.["Plaintext"]')
-        openssl enc -base64 -A -d -in ${PRIVATE_B64} -out ${KEY_NAME}Private.pem
-        openssl enc -base64 -A -d -in ${PUBLIC_B64} -out ${KEY_NAME}Pub.pub
+        ibmcloud kp key unwrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PRIVATE} --output json | jq -r '.["Plaintext"]' > PRIVATE_B64.b64
+        ibmcloud kp key unwrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PUBLIC} --output json | jq -r '.["Plaintext"]' > PUBLIC_B64.b64
+        openssl enc -base64 -A -d -in PRIVATE_B64.b64 -out ${KEY_NAME}Private.pem
+        openssl enc -base64 -A -d -in PUBLIC_B64.b64 -out ${KEY_NAME}Pub.pub
       fi
       ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
-      cd ..
-
-      ##APP_IMAGE="$(params.image-server)/$(params.image-namespace)/$(params.image-repository):$(params.image-tag)"
-      ##buildah --layers --storage-driver=$(params.STORAGE_DRIVER) bud --format=$(params.FORMAT) --tls-verify=$(params.TLSVERIFY) -f $(params.DOCKERFILE) -t ${APP_IMAGE} $(params.CONTEXT)
-      ##set +x
-      ##if [[ -n "${REGISTRY_USER}" ]] && [[ -n "${REGISTRY_PASSWORD}" ]] && [[ "$(params.image-server)" != "image-registry.openshift-image-registry.svc:5000"  ]]; then
-      ##  buildah login -u "${REGISTRY_USER}" -p "${REGISTRY_PASSWORD}" "$(params.image-server)"
-      ##  echo "buildah login -u "${REGISTRY_USER}" -p "xxxxx" "$(params.image-server)""
-      ##fi
-      ##set -x
-      ##cat ./user_keys/${KEY_NAME}Pub.pub
-      ##buildah --storage-driver=$(params.STORAGE_DRIVER) push --encryption-key jwe:./user_keys/${KEY_NAME}Pub.pub --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} docker://${APP_IMAGE}
-      ###echo "Delete Image"
-      ###buildah rmi -f ${APP_IMAGE}
-      ##echo "Pull Image without key"
-      ##buildah pull ${APP_IMAGE} || true
-      ##echo "Pull Image with key"
-      ##buildah pull --decryption-key ./user_keys/${KEY_NAME}Private.pem ${APP_IMAGE}
-      ##skopeo inspect --tls-verify=false docker://${APP_IMAGE}
       
     securityContext:
       privileged: true
