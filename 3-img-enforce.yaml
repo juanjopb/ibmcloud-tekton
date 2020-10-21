@@ -85,7 +85,6 @@ spec:
         helm repo add iks-charts https://icr.io/helm/iks-charts
 
         #helm install cise iks-charts/ibmcloud-image-enforcement
-        helm list -n $(params.image-namespace)
         
         APP_IMAGE="$(params.image-server)/$(params.image-namespace)"
         echo ${APP_IMAGE}
