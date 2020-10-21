@@ -2,6 +2,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: ibm-img-enforce-v2-0-1
+  namespace: dev-freelancer
   annotations:
     description: Runs an image to install ibmcloud-image-enforcement. (CISE)
     app.openshift.io/description: Runs an image to install ibmcloud-image-enforcement
