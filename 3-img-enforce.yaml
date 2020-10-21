@@ -94,6 +94,7 @@ spec:
         KEY_NAME=$(params.image-namespace)
         ibmcloud plugin install key-protect -r "IBM Cloud"
         ibmcloud login --apikey ${IBM_CLOUD_APIKEY} -r ${IBM_CLOUD_REGION}
+        SERVICE_INSTANCE=$(ibmcloud resource service-instance ${KEY_NAME}-srv --id | grep "::" | awk {'print $2'})
         ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
         #PRIVATE_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true )
         PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true )
