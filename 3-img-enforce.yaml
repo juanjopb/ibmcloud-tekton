@@ -13,6 +13,7 @@ spec:
   params:
     - name: image-url
       description: "The location of image to scan on IBM Container Registry <server>/<namespace>/<repository>:<tag>"
+      default: ""
     - name: scan-image
       description: Flag indicating that a scan should be performed
       default: "false"
