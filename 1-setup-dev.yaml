@@ -250,7 +250,7 @@ spec:
 
         if [[ -z "${REGISTRY_TAG}" ]]; then
           # Assume short git commit revision
-          REGISTRY_TAG="$(git rev-parse --verify HEAD --short | tail -c 5)"
+          REGISTRY_TAG="$(git rev-parse --verify HEAD --short | tail -c 2)"
         fi
 
         echo -n "${REGISTRY_SERVER}">$(results.image-server.path)
