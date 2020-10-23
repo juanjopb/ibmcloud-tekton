@@ -94,6 +94,9 @@ spec:
         KEY_NAME=$(params.image-namespace)
         ibmcloud plugin install key-protect -r "IBM Cloud"
         ibmcloud login --apikey ${IBM_CLOUD_APIKEY} -r ${IBM_CLOUD_REGION}
+        #oc policy add-role-to-user admin system:serviceaccount:dev-freelancer:pipeline -n kube-system
+        #oc policy add-role-to-user admin system:serviceaccount:kube-system:default -n dev-freelancer
+        #oc policy add-role-to-user admin system:serviceaccount:kube-system:default -n ibm-system
         SERVICE_INSTANCE=$(ibmcloud resource service-instance ${KEY_NAME}-srv --id | grep "::" | awk {'print $2'})
         ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
         #PRIVATE_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true )
@@ -106,7 +109,7 @@ spec:
         helm version --client
         helm repo add iks-charts https://icr.io/helm/iks-charts
 
-        helm install --name cise iks-charts/ibmcloud-image-enforcement
+        helm status cise || helm install --name cise iks-charts/ibmcloud-image-enforcement
         sleep 30
         kubectl delete ClusterImagePolicy ibmcloud-default-cluster-image-policy
         

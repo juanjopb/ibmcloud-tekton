@@ -142,9 +142,7 @@ spec:
       mkdir user_keys; cd user_keys
       ibmcloud plugin install key-protect -r "IBM Cloud"
       ibmcloud login --apikey ${IBM_CLOUD_APIKEY} -r ${IBM_CLOUD_REGION}
-      #ibmcloud target -r ${IBM_CLOUD_REGION} -g appdev-cloud-native
       ibmcloud target -r ${IBM_CLOUD_REGION}
-      ls -lrth
       echo "****Service Instance"
       SERVICE_INSTANCE=$(ibmcloud resource service-instance ${KEY_NAME}-srv --id | grep "::" | awk {'print $2'})
       echo "****Getting ID PRIVATE Key"
@@ -153,12 +151,6 @@ spec:
       echo "****Getting ID PUBLIC Key"
       PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true )
       ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public"
-      #echo "****Base64 Keys"
-      #echo "****+++++WRAP PUBLIC"
-      #echo "${KEYPROTECT_WRAP_PUBLIC}"
-      #echo "****+++++WRAP PRIVATE"
-      #echo "${KEYPROTECT_WRAP_PRIVATE}"
-      #echo "****+++++Export to variables"
       ibmcloud kp key unwrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PRIVATE} --output json | jq -r '.["Plaintext"]' > PRIVATE_B64.b64
       ibmcloud kp key unwrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PUBLIC} --output json | jq -r '.["Plaintext"]' > PUBLIC_B64.b64
       ls -lrth
@@ -176,14 +168,7 @@ spec:
         echo "buildah login -u "${REGISTRY_USER}" -p "xxxxx" "$(params.image-server)""
       fi
       set -x
-      cat ./user_keys/${KEY_NAME}Pub.pub
       buildah --storage-driver=$(params.STORAGE_DRIVER) push --encryption-key jwe:./user_keys/${KEY_NAME}Pub.pub --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} docker://${APP_IMAGE}
-      #echo "Delete Image"
-      #buildah rmi -f ${APP_IMAGE}
-      echo "Pull Image without key"
-      buildah pull ${APP_IMAGE} || true
-      echo "Pull Image with key"
-      buildah pull --decryption-key ./user_keys/${KEY_NAME}Private.pem ${APP_IMAGE}
       skopeo inspect --tls-verify=false docker://${APP_IMAGE}
       
     securityContext:
