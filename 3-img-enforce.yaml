@@ -111,7 +111,7 @@ spec:
 
         helm status cise || helm install --name cise iks-charts/ibmcloud-image-enforcement
         sleep 30
-        kubectl delete ClusterImagePolicy ibmcloud-default-cluster-image-policy --ignore-not-found=true
+        #kubectl delete ClusterImagePolicy ibmcloud-default-cluster-image-policy --ignore-not-found=true
         
         APP_IMAGE="$(params.image-server)/$(params.image-namespace)"
         echo ${APP_IMAGE}
