@@ -138,7 +138,7 @@ spec:
       #!/bin/bash
       KEY_NAME=$(params.image-namespace)
       yum update -y
-      yum install jq gpg -y
+      yum install jq pinentry -y
       curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
       curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
       chmod +x ./kubectl; sudo mv ./kubectl /usr/local/bin/kubectl; kubectl version --client
@@ -193,7 +193,7 @@ spec:
       ls -lsrt /tekton/home/.gnupg/
       echo "*********Export public key"
       gpg --armor --export 'signsample@foo.bar' > sign-sample.pub
-      cat sign-sample.pub
+      #cat sign-sample.pub
       cat >/etc/gnupg/gpg-agent.conf <<EOF
             pinentry-program /usr/bin/pinentry-curses
       EOF
