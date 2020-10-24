@@ -137,7 +137,7 @@ spec:
     script: |
       #!/bin/bash
       KEY_NAME=$(params.image-namespace)
-      yum install skopeo jq -y
+      yum install skopeo jq gnupg2-smime -y
       curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
       mkdir user_keys; cd user_keys
       ibmcloud plugin install key-protect -r "IBM Cloud"
@@ -206,7 +206,7 @@ spec:
       ls -lsrt /tekton/home/.gnupg/
       echo "*********Export public key"
       gpg --armor --export 'signsample@foo.bar' > sign-sample.pub
-      #cat sign-sample.pub
+      SIGN_CA=$(cat sign-sample.pub)
       cat ~/.gnupg/gpg.conf
       echo "*****Create gpg-agent.conf"
       cat >/etc/gnupg/gpg-agent.conf <<EOF
@@ -220,6 +220,18 @@ spec:
       EOF
       echo "*****REstart Agent"
       echo RELOADAGENT | gpg-connect-agent
+      echo "*****Create ConfigMap"
+      cat >CAuthority-configmap.yaml <<EOF
+            apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: $(params.image-namespace)-registry-ca
+            data:
+              $(params.image-server): |
+                ${SIGN_CA}
+      EOF      
+      echo "*****print ConfigMap"
+      cat CAuthority-configmap.yaml
       skopeo --dest-tls-verify=false copy --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.newsigned
       ls -lrth /tekton/home/sigstore
       
