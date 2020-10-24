@@ -177,8 +177,8 @@ spec:
       PASSPHRASE=abc
       gpg2 --batch -v --gen-key signsample
       echo "*********Import the Public GPG to Keystore"
-      gpg --import signsample.pub
-      cat signsample.pub
+      #gpg --import signsample.pub
+      cat signsample.pub | base64 --decode | gpg --import --no-tty --batch --yes
       echo "*********List Secret Keys"
       gpg2 --list-secret-keys
       echo "*********List Keys"
