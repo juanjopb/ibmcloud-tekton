@@ -33,6 +33,9 @@ spec:
     name: image-tag
     type: string
   - default: ""
+    name: image-url
+    type: string    
+  - default: ""
     name: image-release
     type: string    
   - default: quay.io/containers/skopeo:v1.1.0
@@ -157,6 +160,12 @@ spec:
       PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true )
       APP_IMAGE_ORIGINAL="$(params.image-server)/$(params.image-namespace)/$(params.image-repository):$(params.image-tag)"
       APP_IMAGE_SIGNED="$(params.image-server)/$(params.image-namespace)/$(params.image-repository):$(params.image-tag).signed"
+      IMAGE_FROM=$(params.image-url)
+      REGISTRY_SERVER_FROM=$(echo "${IMAGE_FROM}" | awk -F / '{print $1}')
+      echo "Image FROM: ${IMAGE_FROM}"
+      echo "Image APP_IMAGE_ORIGINAL: ${APP_IMAGE_ORIGINAL}"
+      echo "Image APP_IMAGE_SIGNED: ${APP_IMAGE_SIGNED}"
+      echo "Image REGISTRY_SERVER_FROM: ${REGISTRY_SERVER_FROM}"
 
       cat >signsample <<EOF
             %echo Generating a basic OpenPGP key
@@ -207,7 +216,7 @@ spec:
       EOF
       echo "*****REstart Agent"
       echo RELOADAGENT | gpg-connect-agent
-      skopeo --tls-verify=false --insecure-policy copy --sign-by signsample@foo.bar docker://${APP_IMAGE_ORIGINAL} docker://${APP_IMAGE_SIGNED} <<<$PASSPHRASE
+      skopeo --debug --insecure-policy copy --sign-by signsample@foo.bar docker://${APP_IMAGE_ORIGINAL} docker://${APP_IMAGE_SIGNED} <<<$PASSPHRASE
       ls -lrth /tekton/home/sigstore
 
 
