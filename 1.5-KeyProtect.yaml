@@ -216,7 +216,7 @@ spec:
       EOF
       echo "*****REstart Agent"
       echo RELOADAGENT | gpg-connect-agent
-      skopeo --debug --tls-verify=false copy --sign-by signsample@foo.bar docker://docker.io/library/oraclelinux:8-slim docker://${REGISTRY_SERVER_FROM}/dev-freelancer/oraclelinux:8-slim <<<$PASSPHRASE
+      skopeo --debug --dest-tls-verify=false copy --sign-by signsample@foo.bar docker://docker.io/library/oraclelinux:8-slim docker://${REGISTRY_SERVER_FROM}/dev-freelancer/oraclelinux:8-slim <<<$PASSPHRASE
       ls -lrth /tekton/home/sigstore
 
 
