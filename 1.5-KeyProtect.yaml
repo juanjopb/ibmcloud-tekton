@@ -137,7 +137,8 @@ spec:
     script: |
       #!/bin/bash
       KEY_NAME=$(params.image-namespace)
-      yum install skopeo jq -y
+      yum update -y
+      yum install skopeo jq gpg2 -y
       curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
       curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
       chmod +x ./kubectl; sudo mv ./kubectl /usr/local/bin/kubectl; kubectl version --client
@@ -175,11 +176,11 @@ spec:
             %echo done
       EOF
       PASSPHRASE=abc
-      gpg --batch --gen-key signsample
+      gpg2 --batch -v --gen-key signsample
       echo "*********List Secret Keys"
-      gpg --list-secret-keys
+      gpg2 --list-secret-keys
       echo "*********List Keys"
-      gpg --list-keys
+      gpg2 --list-keys
       echo "*********Make sigstore"
       mkdir -p /tekton/home/sigstore
       echo "*********Change Path Sigstore"
