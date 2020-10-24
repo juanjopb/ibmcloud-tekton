@@ -180,7 +180,7 @@ spec:
       buildah pull ${APP_IMAGE} || true
       echo "Pull Image with key"
       buildah pull --decryption-key ./user_keys/signsamplePrivate.pem ${APP_IMAGE}
-      #sed -i "s/var\/lib\/containers\/sigstore/tekton\/home\/.gnupg\//g" /etc/containers/registries.d/default.yaml
+      #sed -i "s/var\/lib\/containers\/sigstore/tekton\/home\/sigstore\//g" /etc/containers/registries.d/default.yaml
       #cat /etc/containers/registries.d/default.yaml
       #gpg2 --armor --export signsample@foo.bar > sign-sample.pub
       #cat sign-sample.pub
