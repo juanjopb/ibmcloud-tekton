@@ -1,3 +1,7 @@
-FROM quay.io/containers/skopeo:v1.1.0
-RUN yum install jq -y
-RUN yum install gnugpg2 -y
+FROM centos
+#RUN yum install jq -y
+WORKDIR /usr/skopeo/
+COPY ./dev/signsample .
+#RUN gpg --batch -v --gen-key signsample
+#RUN gpg --list-secret-keys
+#RUN gpg --list-keys

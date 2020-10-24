@@ -177,6 +177,8 @@ spec:
       EOF
       PASSPHRASE=abc
       gpg2 --batch -v --gen-key signsample
+      echo "*********Import the Public GPG to Keystore"
+      gpg --import signsample.pub
       echo "*********List Secret Keys"
       gpg2 --list-secret-keys
       echo "*********List Keys"
