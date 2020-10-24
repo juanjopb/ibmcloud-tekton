@@ -167,28 +167,90 @@ spec:
       echo "Image APP_IMAGE_SIGNED: ${APP_IMAGE_SIGNED}"
       echo "Image REGISTRY_SERVER_FROM: ${REGISTRY_SERVER_FROM}"
 
-      cat >signsample <<EOF
-            %echo Generating a basic OpenPGP key
-            Key-Type: DSA
-            Key-Length: 1024
-            Subkey-Type: ELG-E
-            Subkey-Length: 1024
-            Name-Real: SignSample
-            Name-Email: signsample@foo.bar
-            Expire-Date: 0
-            Passphrase: abc
-            %pubring signsample.pub
-            %secring signsample.sec
-            # Do a commit here, so that we can later print "done" :-)
-            %commit
-            %echo done
-      EOF
-      PASSPHRASE=abc
-      gpg2 --batch -v --gen-key signsample
-      echo "*********Import the Public GPG to Keystore"
-      export GPG_TTY=$(tty)
-      gpg --import signsample.pub
-      #cat signsample.pub | base64 --decode | gpg --import --no-tty --batch --yes
+      ###cat >signsample <<EOF
+      ###      %echo Generating a basic OpenPGP key
+      ###      Key-Type: DSA
+      ###      Key-Length: 1024
+      ###      Subkey-Type: ELG-E
+      ###      Subkey-Length: 1024
+      ###      Name-Real: SignSample
+      ###      Name-Email: signsample@foo.bar
+      ###      Expire-Date: 0
+      ###      Passphrase: abc
+      ###      %pubring signsample.pub
+      ###      %secring signsample.sec
+      ###      # Do a commit here, so that we can later print "done" :-)
+      ###      %commit
+      ###      %echo done
+      ###EOF
+      ###PASSPHRASE=abc
+      ###gpg2 --batch -v --gen-key signsample
+      ###echo "*********Import the Public GPG to Keystore"
+      ###export GPG_TTY=$(tty)
+      ###gpg --import signsample.pub
+      ####cat signsample.pub | base64 --decode | gpg --import --no-tty --batch --yes
+      ###echo "*********List Secret Keys"
+      ###gpg2 --list-secret-keys
+      ###echo "*********List Keys"
+      ###gpg2 --list-keys
+      ###echo "*********Make sigstore"
+      ###mkdir -p /tekton/home/sigstore
+      ###echo "*********Change Path Sigstore"
+      ###sed -i "s/var\/lib\/containers\/sigstore/tekton\/home\/sigstore\//g" /etc/containers/registries.d/default.yaml
+      ###echo "*********Make sigstore"
+      ###cat /etc/containers/registries.d/default.yaml
+      ###ls -lsrt /tekton/home/.gnupg/
+      ###echo "*********Export public key"
+      ###gpg --armor --export 'signsample@foo.bar' > sign-sample.pub
+      ####cat sign-sample.pub
+      ###cat ~/.gnupg/gpg.conf
+      ###echo "*****Create gpg-agent.conf"
+      ###cat >/etc/gnupg/gpg-agent.conf <<EOF
+      ###      #pinentry-program /usr/bin/pinentry-curses
+      ###      allow-loopback-pinentry
+      ###EOF
+      ###echo "*****Create gpg.conf"
+      ###cat >~/.gnupg/gpg.conf <<EOF
+      ###      use-agent 
+      ###      pinentry-mode loopback
+      ###EOF
+      ###echo "*****REstart Agent"
+      ###echo RELOADAGENT | gpg-connect-agent
+      ###skopeo --debug --dest-tls-verify=false copy --sign-by signsample@foo.bar docker://docker.io/library/oraclelinux:8-slim docker://${REGISTRY_SERVER_FROM}/dev-freelancer-test/oraclelinux:8-slim <<<$PASSPHRASE
+      ###ls -lrth /tekton/home/sigstore
+
+
+      if [ -z "${PRIVATE_KEY}" ] && [ -z "${PUBLIC_KEY}" ] ; then 
+        echo "****Creating Keys"
+        mkdir user_keys; cd user_keys
+        openssl genrsa --out ${KEY_NAME}Private.pem
+        openssl rsa -in ${KEY_NAME}Private.pem -pubout -out ${KEY_NAME}Pub.pub
+        echo "****Base64 Keys"
+        openssl enc -base64 -A -in ${KEY_NAME}Private.pem -out ${KEY_NAME}Private.b64
+        openssl enc -base64 -A -in ${KEY_NAME}Pub.pub -out ${KEY_NAME}Pub.b64
+        echo "****Create Key's"
+        ibmcloud kp key create kp-${KEY_NAME}-private -i ${SERVICE_INSTANCE}
+        ibmcloud kp key create kp-${KEY_NAME}-public -i ${SERVICE_INSTANCE}
+        echo "***** GET VALUES"
+        PRIVATE_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true)
+        PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true )
+        echo "***** WRAPPING"
+        ibmcloud kp key wrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(cat ${KEY_NAME}Private.b64)" --output json | jq -r '.["Ciphertext"]' > PRIVATE_WRAP.pem
+        ibmcloud kp key wrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(cat ${KEY_NAME}Pub.b64)" --output json | jq -r '.["Ciphertext"]' > PUBLIC_WRAP.pub
+        kubectl create secret generic keyprotect-publickey --from-file=KP_PUBLIC=${KEY_NAME}Pub.pub
+        kubectl create secret generic keyprotect-wrap-public --from-file=publicKey=PUBLIC_WRAP.pub
+        kubectl create secret generic keyprotect-wrap-private --from-file=privateKey=PRIVATE_WRAP.pem
+      else 
+        mkdir user_keys; cd user_keys
+        echo "Keys Already Exists, Retriving the information"
+        ibmcloud kp key unwrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PRIVATE} --output json | jq -r '.["Plaintext"]' > PRIVATE_B64.b64
+        ibmcloud kp key unwrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PUBLIC} --output json | jq -r '.["Plaintext"]' > PUBLIC_B64.b64
+        openssl enc -base64 -A -d -in PRIVATE_B64.b64 -out ${KEY_NAME}Private.pem
+        openssl enc -base64 -A -d -in PUBLIC_B64.b64 -out ${KEY_NAME}Pub.pub
+        
+      fi
+      ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
+      gpg --import ${KEY_NAME}Pub.pub
       echo "*********List Secret Keys"
       gpg2 --list-secret-keys
       echo "*********List Keys"
@@ -217,39 +279,8 @@ spec:
       echo "*****REstart Agent"
       echo RELOADAGENT | gpg-connect-agent
       skopeo --debug --dest-tls-verify=false copy --sign-by signsample@foo.bar docker://docker.io/library/oraclelinux:8-slim docker://${REGISTRY_SERVER_FROM}/dev-freelancer-test/oraclelinux:8-slim <<<$PASSPHRASE
-      ls -lrth /tekton/home/sigstore
 
-
-      ###if [ -z "${PRIVATE_KEY}" ] && [ -z "${PUBLIC_KEY}" ] ; then 
-      ###  ####echo "****Creating Keys"
-      ###  ####mkdir user_keys; cd user_keys
-      ###  ####openssl genrsa --out ${KEY_NAME}Private.pem
-      ###  ####openssl rsa -in ${KEY_NAME}Private.pem -pubout -out ${KEY_NAME}Pub.pub
-      ###  ####echo "****Base64 Keys"
-      ###  ####openssl enc -base64 -A -in ${KEY_NAME}Private.pem -out ${KEY_NAME}Private.b64
-      ###  ####openssl enc -base64 -A -in ${KEY_NAME}Pub.pub -out ${KEY_NAME}Pub.b64
-      ###  ####echo "****Create Key's"
-      ###  ####ibmcloud kp key create kp-${KEY_NAME}-private -i ${SERVICE_INSTANCE}
-      ###  ####ibmcloud kp key create kp-${KEY_NAME}-public -i ${SERVICE_INSTANCE}
-      ###  ####echo "***** GET VALUES"
-      ###  ####PRIVATE_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true)
-      ###  ####PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true )
-      ###  ####echo "***** WRAPPING"
-      ###  ####ibmcloud kp key wrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(cat ${KEY_NAME}Private.b64)" --output json | jq -r '.["Ciphertext"]' > PRIVATE_WRAP.pem
-      ###  ####ibmcloud kp key wrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(cat ${KEY_NAME}Pub.b64)" --output json | jq -r '.["Ciphertext"]' > PUBLIC_WRAP.pub
-      ###  ####kubectl create secret generic keyprotect-publickey --from-file=KP_PUBLIC=${KEY_NAME}Pub.pub
-      ###  ####kubectl create secret generic keyprotect-wrap-public --from-file=publicKey=PUBLIC_WRAP.pub
-      ###  ####kubectl create secret generic keyprotect-wrap-private --from-file=privateKey=PRIVATE_WRAP.pem
-      ###else 
-      ###  ###mkdir user_keys; cd user_keys
-      ###  ###echo "Keys Already Exists, Retriving the information"
-      ###  ###ibmcloud kp key unwrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PRIVATE} --output json | jq -r '.["Plaintext"]' > PRIVATE_B64.b64
-      ###  ###ibmcloud kp key unwrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PUBLIC} --output json | jq -r '.["Plaintext"]' > PUBLIC_B64.b64
-      ###  ###openssl enc -base64 -A -d -in PRIVATE_B64.b64 -out ${KEY_NAME}Private.pem
-      ###  ###openssl enc -base64 -A -d -in PUBLIC_B64.b64 -out ${KEY_NAME}Pub.pub
-      ###fi
-      ###ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
-      ###cd ..
+      cd ..
       
     securityContext:
       privileged: true
