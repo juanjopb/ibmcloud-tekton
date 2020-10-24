@@ -196,7 +196,9 @@ spec:
       #cat sign-sample.pub
       cat >/etc/gnupg/gpg-agent.conf <<EOF
             pinentry-program /usr/bin/pinentry-curses
+            allow-loopback-pinentry
       EOF
+      echo RELOADAGENT | gpg-connect-agent
       skopeo --tls-verify=false --insecure-policy copy --sign-by signsample@foo.bar docker://${APP_IMAGE_ORIGINAL} docker://${APP_IMAGE_SIGNED} <<<$PASSPHRASE
       ls -lrth /tekton/home/sigstore
 
