@@ -35,7 +35,7 @@ spec:
   - default: ""
     name: image-release
     type: string    
-  - default: quay.io/buildah/stable:v1.15.0
+  - default: quay.io/containers/skopeo:v1.1.0
     name: BUILDER_IMAGE
     type: string
   - default: ./Dockerfile
@@ -138,7 +138,7 @@ spec:
       #!/bin/bash
       KEY_NAME=$(params.image-namespace)
       yum update -y
-      yum install skopeo jq gpg2 -y
+      yum install jq gpg -y
       curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
       curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
       chmod +x ./kubectl; sudo mv ./kubectl /usr/local/bin/kubectl; kubectl version --client
