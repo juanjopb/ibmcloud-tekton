@@ -221,17 +221,8 @@ spec:
       echo "*****REstart Agent"
       echo RELOADAGENT | gpg-connect-agent
       echo "*****Create ConfigMap"
-      cat >CAuthority-configmap.yaml <<EOF
-            apiVersion: v1
-            kind: ConfigMap
-            metadata:
-              name: $(params.image-namespace)-registry-ca
-            data:
-              $(params.image-server): |
-                ${SIGN_CA}
-      EOF      
-      echo "*****print ConfigMap"
-      cat CAuthority-configmap.yaml
+      kubectl create configmap $(params.image-namespace)-registry-config --from-file=$(params.image-server)=sign-sample.pub -n openshift-config
+      kubectl list configmap -n openshift-config
       skopeo --dest-tls-verify=false copy --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.newsigned
       ls -lrth /tekton/home/sigstore
       
