@@ -168,8 +168,60 @@ spec:
         echo "buildah login -u "${REGISTRY_USER}" -p "xxxxx" "$(params.image-server)""
       fi
       set -x
-      buildah --storage-driver=$(params.STORAGE_DRIVER) push --encryption-key jwe:./user_keys/${KEY_NAME}Pub.pub --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} docker://${APP_IMAGE}
+      buildah --storage-driver=$(params.STORAGE_DRIVER) push --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} docker://${APP_IMAGE}
       skopeo inspect --tls-verify=false docker://${APP_IMAGE}
+
+      cat >signsample <<EOF
+            %echo Generating a basic OpenPGP key
+            Key-Type: DSA
+            Key-Length: 1024
+            Subkey-Type: ELG-E
+            Subkey-Length: 1024
+            Name-Real: SignSample
+            Name-Email: signsample@foo.bar
+            Expire-Date: 0
+            Passphrase: abc
+            %pubring signsample.pub
+            %secring signsample.sec
+            # Do a commit here, so that we can later print "done" :-)
+            %commit
+            %echo done
+      EOF
+      PASSPHRASE=abc
+      gpg2 --batch -v --gen-key signsample
+      echo "*********Import the Public GPG to Keystore"
+      export GPG_TTY=$(tty)
+      gpg --import signsample.pub
+      #cat signsample.pub | base64 --decode | gpg --import --no-tty --batch --yes
+      echo "*********List Secret Keys"
+      gpg2 --list-secret-keys
+      echo "*********List Keys"
+      gpg2 --list-keys
+      echo "*********Make sigstore"
+      mkdir -p /tekton/home/sigstore
+      echo "*********Change Path Sigstore"
+      sed -i "s/var\/lib\/containers\/sigstore/tekton\/home\/sigstore\//g" /etc/containers/registries.d/default.yaml
+      echo "*********Make sigstore"
+      cat /etc/containers/registries.d/default.yaml
+      ls -lsrt /tekton/home/.gnupg/
+      echo "*********Export public key"
+      gpg --armor --export 'signsample@foo.bar' > sign-sample.pub
+      #cat sign-sample.pub
+      cat ~/.gnupg/gpg.conf
+      echo "*****Create gpg-agent.conf"
+      cat >/etc/gnupg/gpg-agent.conf <<EOF
+            #pinentry-program /usr/bin/pinentry-curses
+            allow-loopback-pinentry
+      EOF
+      echo "*****Create gpg.conf"
+      cat >~/.gnupg/gpg.conf <<EOF
+            use-agent 
+            pinentry-mode loopback
+      EOF
+      echo "*****REstart Agent"
+      echo RELOADAGENT | gpg-connect-agent
+      skopeo --debug --dest-tls-verify=false copy --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.newsigned
+      ls -lrth /tekton/home/sigstore
       
     securityContext:
       privileged: true
