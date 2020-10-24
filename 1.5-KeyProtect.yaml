@@ -216,7 +216,7 @@ spec:
       EOF
       echo "*****REstart Agent"
       echo RELOADAGENT | gpg-connect-agent
-      skopeo --debug --insecure-policy copy --sign-by signsample@foo.bar docker://${APP_IMAGE_ORIGINAL} docker://${APP_IMAGE_SIGNED} <<<$PASSPHRASE
+      skopeo --debug --tls-verify=false --insecure-policy copy --sign-by signsample@foo.bar docker://${APP_IMAGE_ORIGINAL} docker://${APP_IMAGE_SIGNED} <<<$PASSPHRASE
       ls -lrth /tekton/home/sigstore
 
 
