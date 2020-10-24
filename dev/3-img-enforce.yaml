@@ -1,0 +1,147 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: ibm-img-enforce-v2-0-1
+  namespace: dev-freelancer
+  annotations:
+    description: Runs an image to install ibmcloud-image-enforcement. (CISE)
+    app.openshift.io/description: Runs an image to install ibmcloud-image-enforcement
+    app.openshift.io/vcs-uri: https://github.com/IBM/ibm-garage-tekton-tasks
+    app.openshift.io/vcs-ref: master
+  labels:
+    version: 2.0.1
+spec:
+  params:
+    - name: image-url
+      description: "The location of image to scan on IBM Container Registry <server>/<namespace>/<repository>:<tag>"
+      default: ""
+    - name: scan-image
+      description: Flag indicating that a scan should be performed
+      default: "false"
+    - default: 'garagecatalyst/ibmcloud-dev:1.1.3'
+      name: tools-image
+      type: string      
+    - default: ""
+      name: image-namespace
+      type: string
+    - default: ""
+      name: image-server
+      type: string      
+    - default: ""
+      name: app-name
+      type: string
+    - default: ""
+      name: image-release
+      type: string
+    - default: ""
+      name: image-repository
+      type: string       
+  volumes:
+    - name: oci-image
+      emptyDir: {}
+  steps:
+    - name: install-cise
+      image: $(params.tools-image)
+      env:
+        - name: REGISTRY_USER
+          valueFrom:
+            secretKeyRef:
+              name: ibmcloud-apikey
+              key: REGISTRY_USER
+              optional: true
+        - name: REGISTRY_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ibmcloud-apikey
+              key: APIKEY
+              optional: true
+        - name: KP_PUBLIC
+          valueFrom:
+            secretKeyRef:
+              name: keyprotect-publickey
+              key: KP_PUBLIC
+              optional: true
+        - name: KEYPROTECT_WRAP_PUBLIC
+          valueFrom:
+            secretKeyRef:
+              name: keyprotect-wrap-public
+              key: publicKey
+              optional: true
+        - name: KEYPROTECT_WRAP_PRIVATE
+          valueFrom:
+            secretKeyRef:
+              name: keyprotect-wrap-private
+              key: privateKey
+              optional: true
+        - name: IBM_CLOUD_APIKEY
+          valueFrom:
+            secretKeyRef:
+              key: APIKEY
+              name: ibmcloud-apikey
+              optional: true
+        - name: IBM_CLOUD_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: ibmcloud-config
+              key: REGION
+              optional: true              
+      volumeMounts:
+        - mountPath: /var/oci
+          name: oci-image
+      securityContext:
+        privileged: true
+      script: |
+        KEY_NAME=$(params.image-namespace)
+        ibmcloud plugin install key-protect -r "IBM Cloud"
+        ibmcloud login --apikey ${IBM_CLOUD_APIKEY} -r ${IBM_CLOUD_REGION}
+        #oc policy add-role-to-user admin system:serviceaccount:dev-freelancer:pipeline -n kube-system
+        #oc policy add-role-to-user admin system:serviceaccount:kube-system:default -n dev-freelancer
+        #oc policy add-role-to-user admin system:serviceaccount:kube-system:default -n ibm-system
+        SERVICE_INSTANCE=$(ibmcloud resource service-instance ${KEY_NAME}-srv --id | grep "::" | awk {'print $2'})
+        ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
+        #PRIVATE_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true )
+        PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true )
+        #ibmcloud kp key unwrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PRIVATE} --output json | jq -r '.["Plaintext"]' > PRIVATE_B64.b64
+        ibmcloud kp key unwrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PUBLIC} --output json | jq -r '.["Plaintext"]' > PUBLIC_B64.b64
+        openssl enc -base64 -A -d -in PUBLIC_B64.b64 -out ${KEY_NAME}Pub.pub
+        echo "INITIALIZING helm with client-only (no Tiller)"
+        helm init --client-only 1> /dev/null 2> /dev/null
+        helm version --client
+        helm repo add iks-charts https://icr.io/helm/iks-charts
+
+        helm status cise || helm install --name cise iks-charts/ibmcloud-image-enforcement
+        sleep 30
+        #kubectl delete ClusterImagePolicy ibmcloud-default-cluster-image-policy --ignore-not-found=true
+        
+        APP_IMAGE="$(params.image-server)/$(params.image-namespace)"
+        echo ${APP_IMAGE}
+
+        cat <<EOF >./securityPolicy.yaml
+        apiVersion: securityenforcement.admission.cloud.ibm.com/v1beta1
+        kind: ImagePolicy
+        metadata:
+          name: ibmcloud-$(params.app-name)-image-enforce-policy
+        spec:
+          repositories:
+            - name: ${APP_IMAGE}/*
+              policy:
+              trust:
+                  enabled: true
+                  signerSecrets:
+                  - name: keyprotect-publickey
+              va:
+                  enabled: false
+        EOF
+        cat securityPolicy.yaml
+        kubectl apply -f securityPolicy.yaml -n $(params.image-namespace) 
+        kubectl get ImagePolicy -n $(params.image-namespace)
+        kubectl get ClusterImagePolicy
+
+    - name: scan-image
+      image: $(params.tools-image)
+      volumeMounts:
+        - mountPath: /var/oci
+          name: oci-image
+      script: |
+          set -e
+          PERFORM_SCAN="$(params.scan-image)"
