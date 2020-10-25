@@ -223,10 +223,10 @@ spec:
       echo "*****REstart Agent"
       echo RELOADAGENT | gpg-connect-agent
       echo "*****Create ConfigMap"
-      REGISTRY_SERVER_FROM=$(echo "$(params.image-server)" | awk -F : '{print $1}')
-      kubectl create configmap $(params.image-namespace)-registry-config --from-file=${REGISTRY_SERVER_FROM}..5000=sign-sample.pub -n openshift-config
-      kubectl get configmap -n openshift-config
-      skopeo --tls-verify=false copy --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.newsigned
+      #REGISTRY_SERVER_FROM=$(echo "$(params.image-server)" | awk -F : '{print $1}')
+      #kubectl create configmap $(params.image-namespace)-registry-config --from-file=${REGISTRY_SERVER_FROM}..5000=sign-sample.pub -n openshift-config
+      #kubectl get configmap -n openshift-config
+      skopeo copy --debug --tls-verify=false --insecure-policy --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.newsigned
       ls -lrth /tekton/home/sigstore
       
     securityContext:
