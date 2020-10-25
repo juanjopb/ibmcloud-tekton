@@ -231,9 +231,9 @@ spec:
       #kubectl get configmap -n openshift-config
       echo "CHECK"
       echo "*****SKOPEO No Signed"
-      skopeo copy --debug --src-tls-verify=false --dest-tls-verify=false --insecure-policy docker://${APP_IMAGE} docker://${APP_IMAGE}.nosigned
+      skopeo copy --src-tls-verify=false --dest-tls-verify=false --insecure-policy docker://${APP_IMAGE} docker://${APP_IMAGE}.nosigned
       echo "*****SKOPEO with Sign"
-      skopeo copy --debug --src-tls-verify=false --dest-tls-verify=false --insecure-policy --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.newsigned
+      skopeo copy --src-tls-verify=false --dest-tls-verify=false --insecure-policy --registries.d /tekton/home/sigstore/ --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.newsigned
       ls -lrth /tekton/home/sigstore/
       
     securityContext:
