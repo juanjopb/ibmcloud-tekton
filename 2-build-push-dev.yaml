@@ -35,7 +35,7 @@ spec:
   - default: ""
     name: image-release
     type: string    
-  - default: quay.io/buildah/stable:v1.15.0
+  - default: rhel6
     name: BUILDER_IMAGE
     type: string
   - default: ./Dockerfile
@@ -194,7 +194,7 @@ spec:
       echo "*********Import the Public GPG to Keystore"
       export GPG_TTY=$(tty)
       gpg --import signsample.pub
-      gpg --import ${KEY_NAME}Pub.pub
+      #gpg --import ${KEY_NAME}Pub.pub
       #cat signsample.pub | base64 --decode | gpg --import --no-tty --batch --yes
       echo "*********List Secret Keys"
       gpg2 --list-secret-keys
