@@ -194,6 +194,7 @@ spec:
       echo "*********Import the Public GPG to Keystore"
       export GPG_TTY=$(tty)
       gpg --import signsample.pub
+      gpg --import ${KEY_NAME}Pub.pub
       #cat signsample.pub | base64 --decode | gpg --import --no-tty --batch --yes
       echo "*********List Secret Keys"
       gpg2 --list-secret-keys
@@ -226,7 +227,10 @@ spec:
       #REGISTRY_SERVER_FROM=$(echo "$(params.image-server)" | awk -F : '{print $1}')
       #kubectl create configmap $(params.image-namespace)-registry-config --from-file=${REGISTRY_SERVER_FROM}..5000=sign-sample.pub -n openshift-config
       #kubectl get configmap -n openshift-config
-      skopeo copy --debug --tls-verify=false --insecure-policy --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.newsigned
+      echo "*****SKOPEO No Signed"
+      skopeo copy --debug --src-tls-verify=false --dest-tls-verify=false --insecure-policy docker://${APP_IMAGE} docker://${APP_IMAGE}.nosigned
+      echo "*****SKOPEO with Sign"
+      skopeo copy --debug --src-tls-verify=false --dest-tls-verify=false --insecure-policy --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.newsigned
       ls -lrth /tekton/home/sigstore
       
     securityContext:
