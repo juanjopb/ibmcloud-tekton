@@ -194,7 +194,7 @@ spec:
       echo "*********Import the Public GPG to Keystore"
       export GPG_TTY=$(tty)
       gpg2 --import signsample.pub
-      #gpg --import ${KEY_NAME}Pub.pub
+      #gpg2 --import ${KEY_NAME}Pub.pub
       #cat signsample.pub | base64 --decode | gpg --import --no-tty --batch --yes
       echo "*********List Secret Keys"
       gpg2 --list-secret-keys
@@ -202,6 +202,8 @@ spec:
       gpg2 --list-keys
       echo "*********Make sigstore"
       mkdir -p /tekton/home/sigstore/
+      pwd
+      echo "*********Make sigstore "
       echo "*********Change Path Sigstore"
       sed -i "s/var\/lib\/containers\/sigstore/tekton\/home\/sigstore\//g" /etc/containers/registries.d/default.yaml
       echo "*********Make sigstore"
@@ -232,7 +234,7 @@ spec:
       echo "CHECK"
       echo "*****SKOPEO No Signed"
       skopeo copy --src-tls-verify=false --dest-tls-verify=false --insecure-policy docker://${APP_IMAGE} docker://${APP_IMAGE}.nosigned
-      echo "*****SKOPEO with Sign"
+      echo "*****SKOPEO with Sign and passhprase"
       skopeo copy --src-tls-verify=false --dest-tls-verify=false --insecure-policy --registries.d . --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.newsigned <<<$PASSPHRASE
       ls -lrth /tekton/home/sigstore/
       
