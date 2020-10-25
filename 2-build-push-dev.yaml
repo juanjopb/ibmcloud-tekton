@@ -193,7 +193,7 @@ spec:
       gpg2 --batch -v --gen-key signsample
       echo "*********Import the Public GPG to Keystore"
       export GPG_TTY=$(tty)
-      gpg --import signsample.pub
+      gpg2 --import signsample.pub
       #gpg --import ${KEY_NAME}Pub.pub
       #cat signsample.pub | base64 --decode | gpg --import --no-tty --batch --yes
       echo "*********List Secret Keys"
@@ -208,7 +208,7 @@ spec:
       cat /etc/containers/registries.d/default.yaml
       ls -lsrt /tekton/home/.gnupg/
       echo "*********Export public key"
-      gpg --armor --export signsample@foo.bar > sign-sample.pub
+      gpg2 --armor --export signsample@foo.bar > sign-sample.pub
       SIGN_CA=$(cat sign-sample.pub)
       echo "*********PRINT public key"
       echo "${SIGN_CA}"
@@ -233,7 +233,7 @@ spec:
       echo "*****SKOPEO No Signed"
       skopeo copy --src-tls-verify=false --dest-tls-verify=false --insecure-policy docker://${APP_IMAGE} docker://${APP_IMAGE}.nosigned
       echo "*****SKOPEO with Sign"
-      skopeo copy --src-tls-verify=false --dest-tls-verify=false --insecure-policy --registries.d . --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.newsigned
+      skopeo copy --src-tls-verify=false --dest-tls-verify=false --insecure-policy --registries.d . --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.newsigned <<<$PASSPHRASE
       ls -lrth /tekton/home/sigstore/
       
     securityContext:
