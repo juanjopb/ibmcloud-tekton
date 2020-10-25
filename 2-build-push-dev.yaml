@@ -239,9 +239,13 @@ spec:
       echo "*****SKOPEO DOCKER with Sign and with nopasshprase"
       skopeo copy --dest-creds=juanjosepb:Pillin52 --src-tls-verify=false --dest-tls-verify=false --insecure-policy --registries.d . --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://docker.io/juanjosepb/signedimage:2.0.signed
       echo "*****SKOPEO DOCKER with Sign and passhprase"
-      echo $PASSPHRASE | skopeo copy --dest-creds=juanjosepb:Pillin52 --src-tls-verify=false --dest-tls-verify=false --insecure-policy --registries.d . --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://docker.io/juanjosepb/signedimage:3.0.signed
+      echo "********************************************"
+      echo "********************************************"
+      echo "$PASSPHRASE" | skopeo copy --debug --dest-creds=juanjosepb:Pillin52 --src-tls-verify=false --dest-tls-verify=false --insecure-policy --registries.d . --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://docker.io/juanjosepb/signedimage:3.0.signed
       echo "*****SKOPEO with Sign and passhprase"
-      echo $PASSPHRASE | skopeo copy --src-tls-verify=false --dest-tls-verify=false --insecure-policy --registries.d . --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.newsigned
+      echo "********************************************"
+      echo "********************************************"
+      echo "$PASSPHRASE" | skopeo copy --debug --src-tls-verify=false --dest-tls-verify=false --insecure-policy --registries.d . --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.newsigned
       ls -lrth /source/sigstore/
       
     securityContext:
