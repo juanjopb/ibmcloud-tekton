@@ -160,7 +160,7 @@ spec:
       openssl enc -base64 -A -d -in PRIVATE_B64.b64 -out ${KEY_NAME}Private.pem
       openssl enc -base64 -A -d -in PUBLIC_B64.b64 -out ${KEY_NAME}Pub.pub
       ls -lrth
-      #cd ..
+      cd ..
 
       APP_IMAGE="$(params.image-server)/$(params.image-namespace)/$(params.image-repository):$(params.image-tag)"
       buildah --layers --storage-driver=$(params.STORAGE_DRIVER) bud --format=$(params.FORMAT) --tls-verify=$(params.TLSVERIFY) -f $(params.DOCKERFILE) -t ${APP_IMAGE} $(params.CONTEXT)
@@ -201,10 +201,11 @@ spec:
       echo "*********List Keys"
       gpg --list-keys
       echo "*********Make sigstore"
-      mkdir -p /tekton/home/sigstore/
+      mkdir -p /source/sigstore/
+      chmod 777 /source/sigstore/
       echo "*********Make sigstore "
       echo "*********Change Path Sigstore"
-      sed -i "s/var\/lib\/containers\/sigstore/tekton\/home\/sigstore\//g" /etc/containers/registries.d/default.yaml
+      sed -i "s/var\/lib\/containers\/sigstore/source\/sigstore\//g" /etc/containers/registries.d/default.yaml
       echo "*********Make sigstore"
       cat /etc/containers/registries.d/default.yaml
       ls -lsrt /tekton/home/.gnupg/
@@ -213,24 +214,26 @@ spec:
       #SIGN_CA=$(cat sign-sample.pub)
       #echo "*********PRINT public key"
       #echo "${SIGN_CA}"
-      cat ~/.gnupg/gpg.conf
-      echo "*****Create gpg-agent.conf"
-      cat >/etc/gnupg/gpg-agent.conf <<EOF
-            #pinentry-program /usr/bin/pinentry-curses
-            allow-loopback-pinentry
-      EOF
-      echo "*****Create gpg.conf"
-      cat >~/.gnupg/gpg.conf <<EOF
-            use-agent 
-            pinentry-mode loopback
-      EOF
-      echo "*****REstart Agent"
-      echo RELOADAGENT | gpg-connect-agent
-      echo "*****Create ConfigMap"
+      ##cat ~/.gnupg/gpg.conf
+      ##echo "*****Create gpg-agent.conf"
+      ##cat >/etc/gnupg/gpg-agent.conf <<EOF
+      ##      #pinentry-program /usr/bin/pinentry-curses
+      ##      allow-loopback-pinentry
+      ##EOF
+      ##echo "*****Create gpg.conf"
+      ##cat >~/.gnupg/gpg.conf <<EOF
+      ##      use-agent 
+      ##      pinentry-mode loopback
+      ##EOF
+      ##echo "*****REstart Agent"
+      ##echo RELOADAGENT | gpg-connect-agent
+      #echo "*****Create ConfigMap"
       #REGISTRY_SERVER_FROM=$(echo "$(params.image-server)" | awk -F : '{print $1}')
       #kubectl create configmap $(params.image-namespace)-registry-config --from-file=${REGISTRY_SERVER_FROM}..5000=sign-sample.pub -n openshift-config
       #kubectl get configmap -n openshift-config
-      echo "CHECK"
+      #echo "CHECK"
+      #skopeo delete --force docker://image-registry.openshift-image-registry.svc:5000/dev-freelancer/dev-signing-sample-spring:3e69
+      #skopeo delete --force docker://image-registry.openshift-image-registry.svc:5000/dev-freelancer/dev-signing-sample-spring:3e69
       echo "*****SKOPEO No Signed"
       skopeo copy --src-tls-verify=false --dest-tls-verify=false --insecure-policy docker://${APP_IMAGE} docker://${APP_IMAGE}.nosigned
       echo "*****SKOPEO DOCKER with Sign and with nopasshprase"
@@ -239,7 +242,7 @@ spec:
       skopeo copy --dest-creds=juanjosepb:Pillin52 --src-tls-verify=false --dest-tls-verify=false --insecure-policy --registries.d . --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://docker.io/juanjosepb/signedimage:3.0.signed <<<$PASSPHRASE
       echo "*****SKOPEO with Sign and passhprase"
       skopeo copy --src-tls-verify=false --dest-tls-verify=false --insecure-policy --registries.d . --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.newsigned <<<$PASSPHRASE
-      ls -lrth /tekton/home/sigstore/
+      ls -lrth /source/sigstore/
       
     securityContext:
       privileged: true
