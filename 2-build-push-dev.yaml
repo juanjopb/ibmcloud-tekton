@@ -160,7 +160,7 @@ spec:
       openssl enc -base64 -A -d -in PRIVATE_B64.b64 -out ${KEY_NAME}Private.pem
       openssl enc -base64 -A -d -in PUBLIC_B64.b64 -out ${KEY_NAME}Pub.pub
       ls -lrth
-      cd ..
+      #cd ..
 
       APP_IMAGE="$(params.image-server)/$(params.image-namespace)/$(params.image-repository):$(params.image-tag)"
       buildah --layers --storage-driver=$(params.STORAGE_DRIVER) bud --format=$(params.FORMAT) --tls-verify=$(params.TLSVERIFY) -f $(params.DOCKERFILE) -t ${APP_IMAGE} $(params.CONTEXT)
@@ -190,19 +190,18 @@ spec:
             %echo done
       EOF
       PASSPHRASE=abc
-      gpg2 --batch -v --gen-key signsample
+      echo "********* Located on ******"
+      pwd
+      gpg --batch -v --gen-key signsample
       echo "*********Import the Public GPG to Keystore"
       export GPG_TTY=$(tty)
-      gpg2 --import signsample.pub
-      #gpg2 --import ${KEY_NAME}Pub.pub
-      #cat signsample.pub | base64 --decode | gpg --import --no-tty --batch --yes
+      gpg --import signsample.pub
       echo "*********List Secret Keys"
-      gpg2 --list-secret-keys
+      gpg --list-secret-keys
       echo "*********List Keys"
-      gpg2 --list-keys
+      gpg --list-keys
       echo "*********Make sigstore"
       mkdir -p /tekton/home/sigstore/
-      pwd
       echo "*********Make sigstore "
       echo "*********Change Path Sigstore"
       sed -i "s/var\/lib\/containers\/sigstore/tekton\/home\/sigstore\//g" /etc/containers/registries.d/default.yaml
@@ -210,10 +209,10 @@ spec:
       cat /etc/containers/registries.d/default.yaml
       ls -lsrt /tekton/home/.gnupg/
       echo "*********Export public key"
-      gpg2 --armor --export signsample@foo.bar > sign-sample.pub
-      SIGN_CA=$(cat sign-sample.pub)
-      echo "*********PRINT public key"
-      echo "${SIGN_CA}"
+      gpg --armor --export signsample@foo.bar > sign-sample.pub
+      #SIGN_CA=$(cat sign-sample.pub)
+      #echo "*********PRINT public key"
+      #echo "${SIGN_CA}"
       cat ~/.gnupg/gpg.conf
       echo "*****Create gpg-agent.conf"
       cat >/etc/gnupg/gpg-agent.conf <<EOF
