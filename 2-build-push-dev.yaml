@@ -35,7 +35,7 @@ spec:
   - default: ""
     name: image-release
     type: string    
-  - default: rhel6
+  - default: quay.io/buildah/stable:v1.15.0
     name: BUILDER_IMAGE
     type: string
   - default: ./Dockerfile
@@ -137,10 +137,6 @@ spec:
     script: |
       #!/bin/bash
       KEY_NAME=$(params.image-namespace)
-      echo "****CHECK ATOMIC**"
-      atomic --version
-      echo "oc adm verify-image-signature"
-      oc adm verify-image-signature
       yum install skopeo jq gnupg2-smime -y
       curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
       curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
@@ -233,7 +229,7 @@ spec:
       #REGISTRY_SERVER_FROM=$(echo "$(params.image-server)" | awk -F : '{print $1}')
       #kubectl create configmap $(params.image-namespace)-registry-config --from-file=${REGISTRY_SERVER_FROM}..5000=sign-sample.pub -n openshift-config
       #kubectl get configmap -n openshift-config
-      echo "CHECK ATOMIC"
+      echo "CHECK"
       echo "*****SKOPEO No Signed"
       skopeo copy --debug --src-tls-verify=false --dest-tls-verify=false --insecure-policy docker://${APP_IMAGE} docker://${APP_IMAGE}.nosigned
       echo "*****SKOPEO with Sign"
