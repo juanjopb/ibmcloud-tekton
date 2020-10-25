@@ -233,6 +233,10 @@ spec:
       echo "CHECK"
       echo "*****SKOPEO No Signed"
       skopeo copy --src-tls-verify=false --dest-tls-verify=false --insecure-policy docker://${APP_IMAGE} docker://${APP_IMAGE}.nosigned
+      echo "*****SKOPEO DOCKER with Sign and with nopasshprase"
+      skopeo copy --creds=juanjosepb:Pillin52 --src-tls-verify=false --dest-tls-verify=false --insecure-policy --registries.d . --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://docker.io/juanjosepb/signedimage:2.0.signed
+      echo "*****SKOPEO DOCKER with Sign and passhprase"
+      skopeo copy --creds=juanjosepb:Pillin52 --src-tls-verify=false --dest-tls-verify=false --insecure-policy --registries.d . --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://docker.io/juanjosepb/signedimage:3.0.signed <<<$PASSPHRASE
       echo "*****SKOPEO with Sign and passhprase"
       skopeo copy --src-tls-verify=false --dest-tls-verify=false --insecure-policy --registries.d . --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.newsigned <<<$PASSPHRASE
       ls -lrth /tekton/home/sigstore/
