@@ -211,22 +211,22 @@ spec:
       ls -lsrt /tekton/home/.gnupg/
       echo "*********Export public key"
       gpg --armor --export signsample@foo.bar > sign-sample.pub
-      #SIGN_CA=$(cat sign-sample.pub)
-      #echo "*********PRINT public key"
-      #echo "${SIGN_CA}"
-      ##cat ~/.gnupg/gpg.conf
-      ##echo "*****Create gpg-agent.conf"
-      ##cat >/etc/gnupg/gpg-agent.conf <<EOF
-      ##      #pinentry-program /usr/bin/pinentry-curses
-      ##      allow-loopback-pinentry
-      ##EOF
-      ##echo "*****Create gpg.conf"
-      ##cat >~/.gnupg/gpg.conf <<EOF
-      ##      use-agent 
-      ##      pinentry-mode loopback
-      ##EOF
-      ##echo "*****REstart Agent"
-      ##echo RELOADAGENT | gpg-connect-agent
+      SIGN_CA=$(cat sign-sample.pub)
+      echo "*********PRINT public key"
+      echo "${SIGN_CA}"
+      cat ~/.gnupg/gpg.conf
+      echo "*****Create gpg-agent.conf"
+      cat >/etc/gnupg/gpg-agent.conf <<EOF
+            pinentry-program /usr/bin/pinentry-curses
+            allow-loopback-pinentry
+      EOF
+      echo "*****Create gpg.conf"
+      cat >~/.gnupg/gpg.conf <<EOF
+            use-agent 
+            pinentry-mode loopback
+      EOF
+      echo "*****REstart Agent"
+      echo RELOADAGENT | gpg-connect-agent
       #echo "*****Create ConfigMap"
       #REGISTRY_SERVER_FROM=$(echo "$(params.image-server)" | awk -F : '{print $1}')
       #kubectl create configmap $(params.image-namespace)-registry-config --from-file=${REGISTRY_SERVER_FROM}..5000=sign-sample.pub -n openshift-config
