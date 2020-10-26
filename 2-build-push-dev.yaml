@@ -238,8 +238,8 @@ spec:
       echo "*****SKOPEO with Sign and passhprase"
       echo "********************************************"
       echo "********************************************"
-      skopeo copy --debug --src-tls-verify=false --dest-tls-verify=false --insecure-policy --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.newsigned <<<$PASSPHRASE
-      #ls -lrth /source/sigstore/
+      skopeo copy --src-tls-verify=false --dest-tls-verify=false --insecure-policy --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.newsigned <<<$PASSPHRASE
+      ls -lrth /source/sigstore/
       
     securityContext:
       privileged: true
