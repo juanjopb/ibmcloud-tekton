@@ -35,7 +35,7 @@ spec:
   - default: ""
     name: image-release
     type: string    
-  - default: quay.io/buildah/stable:v1.15.0
+  - default: centos/tools:latest
     name: BUILDER_IMAGE
     type: string
   - default: ./Dockerfile
@@ -137,7 +137,7 @@ spec:
     script: |
       #!/bin/bash
       KEY_NAME=$(params.image-namespace)
-      yum install skopeo jq gnupg2-smime -y
+      yum install skopeo jq gnupg2-smime buildah -y
       curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
       curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
       chmod +x ./kubectl; sudo mv ./kubectl /usr/local/bin/kubectl; kubectl version --client      
@@ -175,6 +175,7 @@ spec:
 
       cat >signsample <<EOF
             %echo Generating a basic OpenPGP key
+            %no-protection
             Key-Type: DSA
             Key-Length: 1024
             Subkey-Type: ELG-E
@@ -190,30 +191,8 @@ spec:
             %echo done
       EOF
       PASSPHRASE=abc
-      echo "********* Located on ******"
-      pwd
-      gpg --batch -v --gen-key signsample
-      echo "*********Import the Public GPG to Keystore"
-      export GPG_TTY=$(tty)
-      gpg --import signsample.pub
-      echo "*********List Secret Keys"
-      gpg --list-secret-keys
-      echo "*********List Keys"
-      gpg --list-keys
-      echo "*********Make sigstore"
-      mkdir -p /source/sigstore/
-      chmod 777 /source/sigstore/
-      echo "*********Make sigstore "
-      echo "*********Change Path Sigstore"
-      sed -i "s/var\/lib\/containers\/sigstore/source\/sigstore\//g" /etc/containers/registries.d/default.yaml
-      echo "*********Make sigstore"
-      cat /etc/containers/registries.d/default.yaml
-      ls -lsrt /tekton/home/.gnupg/
-      echo "*********Export public key"
-      gpg --armor --export signsample@foo.bar > sign-sample.pub
-      SIGN_CA=$(cat sign-sample.pub)
-      echo "*********PRINT public key"
-      echo "${SIGN_CA}"
+      
+      export GPG_TTY=$(tty)      
       cat ~/.gnupg/gpg.conf
       echo "*****Create gpg-agent.conf"
       cat >/etc/gnupg/gpg-agent.conf <<EOF
@@ -225,28 +204,42 @@ spec:
             use-agent 
             pinentry-mode loopback
       EOF
-      echo "*****REstart Agent"
-      echo RELOADAGENT | gpg-connect-agent
+      gpg --batch -v --gen-key signsample
+      echo "*********Import the Public GPG to Keystore"
+      gpg --import signsample.pub
+      echo "*********List Secret Keys"
+      gpg --list-secret-keys
+      echo "*********List Keys"
+      gpg --list-keys
+      echo "*********Make sigstore"
+      mkdir -p /source/sigstore/
+      chmod 777 /source/sigstore/
+      echo "*********Make sigstore "
+      echo "*********Change Path Sigstore"
+      sed -i "s/var\/lib\/containers\/sigstore/source\/sigstore/g" /etc/containers/registries.d/default.yaml
+      echo "*********Make sigstore"
+      cat /etc/containers/registries.d/default.yaml
+      ls -lsrt ~/.gnupg/
+      echo "*********Export public key"
+      gpg --armor --export signsample@foo.bar > sign-sample.pub
+      SIGN_CA=$(cat sign-sample.pub)
+      echo "*********PRINT public key"
+      echo "${SIGN_CA}"
+      #echo "*****REstart Agent"
+      #echo RELOADAGENT | gpg-connect-agent
       #echo "*****Create ConfigMap"
-      #REGISTRY_SERVER_FROM=$(echo "$(params.image-server)" | awk -F : '{print $1}')
+      REGISTRY_SERVER_FROM=$(echo "$(params.image-server)" | awk -F : '{print $1}')
       #kubectl create configmap $(params.image-namespace)-registry-config --from-file=${REGISTRY_SERVER_FROM}..5000=sign-sample.pub -n openshift-config
       #kubectl get configmap -n openshift-config
       #echo "CHECK"
       #skopeo delete --force docker://image-registry.openshift-image-registry.svc:5000/dev-freelancer/dev-signing-sample-spring:3e69
       #skopeo delete --force docker://image-registry.openshift-image-registry.svc:5000/dev-freelancer/dev-signing-sample-spring:3e69
-      echo "*****SKOPEO No Signed"
-      skopeo copy --src-tls-verify=false --dest-tls-verify=false --insecure-policy docker://${APP_IMAGE} docker://${APP_IMAGE}.nosigned
-      echo "*****SKOPEO DOCKER with Sign and with nopasshprase"
-      skopeo copy --dest-creds=juanjosepb:Pillin52 --src-tls-verify=false --dest-tls-verify=false --insecure-policy --registries.d . --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://docker.io/juanjosepb/signedimage:2.0.signed
-      echo "*****SKOPEO DOCKER with Sign and passhprase"
-      echo "********************************************"
-      echo "********************************************"
-      echo "$PASSPHRASE" | skopeo copy --debug --dest-creds=juanjosepb:Pillin52 --src-tls-verify=false --dest-tls-verify=false --insecure-policy --registries.d . --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://docker.io/juanjosepb/signedimage:3.0.signed
+
       echo "*****SKOPEO with Sign and passhprase"
       echo "********************************************"
       echo "********************************************"
-      echo "$PASSPHRASE" | skopeo copy --debug --src-tls-verify=false --dest-tls-verify=false --insecure-policy --registries.d . --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.newsigned
-      ls -lrth /source/sigstore/
+      skopeo copy --debug --src-tls-verify=false --dest-tls-verify=false --insecure-policy --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.newsigned <<<$PASSPHRASE
+      #ls -lrth /source/sigstore/
       
     securityContext:
       privileged: true
