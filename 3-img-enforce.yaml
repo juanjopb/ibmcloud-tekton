@@ -59,7 +59,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: keyprotect-publickey
-              key: KP_PUBLIC
+              key: publicKey
               optional: true
         - name: KEYPROTECT_WRAP_PUBLIC
           valueFrom:

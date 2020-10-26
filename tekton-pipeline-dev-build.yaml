@@ -103,162 +103,162 @@ spec:
     taskRef:
       kind: Task
       name: ibm-build-tag-push-dev-v2-0-1
-##  - name: image-enforcement
-##    params:
-##    - name: image-server
-##      value: $(tasks.setup.results.image-server)
-##    - name: image-namespace
-##      value: $(tasks.setup.results.image-namespace)
-##    - name: image-repository
-##      value: $(tasks.setup.results.image-repository)
-##    - name: image-release
-##      value: $(tasks.setup.results.image-release)
-##    - name: app-name
-##      value: $(tasks.setup.results.app-name)
-##    - name: tools-image
-##      value: $(tasks.setup.results.tools-image)      
-##    runAfter:
-##    - build
-##    taskRef:
-##      kind: Task
-##      name: ibm-img-enforce-v2-0-1
-##  - name: deploy
-##    params:
-##    - name: git-url
-##      value: $(tasks.setup.results.git-url)
-##    - name: git-revision
-##      value: $(tasks.setup.results.git-revision)
-##    - name: source-dir
-##      value: $(tasks.setup.results.source-dir)
-##    - name: image-server
-##      value: $(tasks.setup.results.image-server)
-##    - name: image-namespace
-##      value: $(tasks.setup.results.image-namespace)
-##    - name: image-repository
-##      value: $(tasks.setup.results.image-repository)
-##    - name: image-tag
-##      value: $(tasks.setup.results.image-tag)
-##    - name: app-namespace
-##      value: $(tasks.setup.results.app-namespace)
-##    - name: app-name
-##      value: $(tasks.setup.results.app-name)
-##    - name: deploy-ingress-type
-##      value: $(tasks.setup.results.deploy-ingress-type)
-##    - name: tools-image
-##      value: $(tasks.setup.results.tools-image)
-##    runAfter:
-##    - image-enforcement
-##    taskRef:
-##      kind: Task
-##      name: ibm-deploy-v2-0-1
-##  - name: health
-##    params:
-##    - name: app-namespace
-##      value: $(tasks.setup.results.app-namespace)
-##    - name: app-name
-##      value: $(tasks.setup.results.app-name)
-##    - name: deploy-ingress-type
-##      value: $(tasks.setup.results.deploy-ingress-type)
-##    - name: health-protocol
-##      value: $(tasks.setup.results.health-protocol)
-##    - name: health-endpoint
-##      value: $(tasks.setup.results.health-endpoint)
-##    - name: tools-image
-##      value: $(tasks.setup.results.tools-image)
-##    runAfter:
-##    - deploy
-##    taskRef:
-##      kind: Task
-##      name: ibm-health-check-v2-0-1
-##  - name: pact-verify
-##    params:
-##    - name: git-url
-##      value: $(tasks.setup.results.git-url)
-##    - name: git-revision
-##      value: $(tasks.setup.results.git-revision)
-##    - name: source-dir
-##      value: $(tasks.setup.results.source-dir)
-##    - name: service-host
-##      value: $(tasks.setup.results.app-name)
-##    - name: service-port
-##      value: $(tasks.deploy.results.service-port)
-##    - name: tools-image
-##      value: $(tasks.setup.results.tools-image)
-##    runAfter:
-##    - health
-##    taskRef:
-##      kind: Task
-##      name: ibm-gradle-pact-verify-v2-0-1
-##  - name: tag-release
-##    params:
-##    - name: git-url
-##      value: $(tasks.setup.results.git-url)
-##    - name: git-revision
-##      value: $(tasks.setup.results.git-revision)
-##    - name: source-dir
-##      value: $(tasks.setup.results.source-dir)
-##    - name: js-image
-##      value: $(tasks.setup.results.js-image)
-##    runAfter:
-##    - pact-verify
-##    taskRef:
-##      kind: Task
-##      name: ibm-tag-release-v2-0-1
-##  - name: img-release
-##    params:
-##    - name: image-from
-##      value: $(tasks.setup.results.image-url)
-##    - name: image-to
-##      value: $(tasks.setup.results.image-release):$(tasks.tag-release.results.tag)
-##    runAfter:
-##    - tag-release
-##    taskRef:
-##      kind: Task
-##      name: ibm-img-release-v2-0-1
-##  - name: scan
-##    params:
-##    - name: image-url
-##      value: $(tasks.img-release.results.image-url)
-##    - name: scan-image
-##      value: $(params.scan-image)
-##    runAfter:
-##    - img-release
-##    taskRef:
-##      kind: Task
-##      name: ibm-img-scan-ibm-v2-0-1
-##  - name: helm-release
-##    params:
-##    - name: git-url
-##      value: $(tasks.setup.results.git-url)
-##    - name: git-revision
-##      value: $(tasks.setup.results.git-revision)
-##    - name: source-dir
-##      value: $(tasks.setup.results.source-dir)
-##    - name: image-url
-##      value: $(tasks.img-release.results.image-url)
-##    - name: app-name
-##      value: $(tasks.setup.results.app-name)
-##    - name: deploy-ingress-type
-##      value: $(tasks.setup.results.deploy-ingress-type)
-##    - name: tools-image
-##      value: $(tasks.setup.results.tools-image)
-##    runAfter:
-##    - scan
-##    taskRef:
-##      kind: Task
-##      name: ibm-helm-release-v2-0-1
-##  - name: gitops
-##    params:
-##    - name: app-name
-##      value: $(tasks.setup.results.app-name)
-##    - name: version
-##      value: $(tasks.tag-release.results.tag)
-##    - name: helm-url
-##      value: $(tasks.helm-release.results.helm-url)
-##    - name: tools-image
-##      value: $(tasks.setup.results.tools-image)
-##    runAfter:
-##    - helm-release
-##    taskRef:
-##      kind: Task
-##      name: ibm-gitops-v2-0-1      
+  - name: image-enforcement
+    params:
+    - name: image-server
+      value: $(tasks.setup.results.image-server)
+    - name: image-namespace
+      value: $(tasks.setup.results.image-namespace)
+    - name: image-repository
+      value: $(tasks.setup.results.image-repository)
+    - name: image-release
+      value: $(tasks.setup.results.image-release)
+    - name: app-name
+      value: $(tasks.setup.results.app-name)
+    - name: tools-image
+      value: $(tasks.setup.results.tools-image)      
+    runAfter:
+    - build
+    taskRef:
+      kind: Task
+      name: ibm-img-enforce-v2-0-1
+  - name: deploy
+    params:
+    - name: git-url
+      value: $(tasks.setup.results.git-url)
+    - name: git-revision
+      value: $(tasks.setup.results.git-revision)
+    - name: source-dir
+      value: $(tasks.setup.results.source-dir)
+    - name: image-server
+      value: $(tasks.setup.results.image-server)
+    - name: image-namespace
+      value: $(tasks.setup.results.image-namespace)
+    - name: image-repository
+      value: $(tasks.setup.results.image-repository)
+    - name: image-tag
+      value: $(tasks.setup.results.image-tag)
+    - name: app-namespace
+      value: $(tasks.setup.results.app-namespace)
+    - name: app-name
+      value: $(tasks.setup.results.app-name)
+    - name: deploy-ingress-type
+      value: $(tasks.setup.results.deploy-ingress-type)
+    - name: tools-image
+      value: $(tasks.setup.results.tools-image)
+    runAfter:
+    - image-enforcement
+    taskRef:
+      kind: Task
+      name: ibm-deploy-v2-0-1
+  - name: health
+    params:
+    - name: app-namespace
+      value: $(tasks.setup.results.app-namespace)
+    - name: app-name
+      value: $(tasks.setup.results.app-name)
+    - name: deploy-ingress-type
+      value: $(tasks.setup.results.deploy-ingress-type)
+    - name: health-protocol
+      value: $(tasks.setup.results.health-protocol)
+    - name: health-endpoint
+      value: $(tasks.setup.results.health-endpoint)
+    - name: tools-image
+      value: $(tasks.setup.results.tools-image)
+    runAfter:
+    - deploy
+    taskRef:
+      kind: Task
+      name: ibm-health-check-v2-0-1
+  - name: pact-verify
+    params:
+    - name: git-url
+      value: $(tasks.setup.results.git-url)
+    - name: git-revision
+      value: $(tasks.setup.results.git-revision)
+    - name: source-dir
+      value: $(tasks.setup.results.source-dir)
+    - name: service-host
+      value: $(tasks.setup.results.app-name)
+    - name: service-port
+      value: $(tasks.deploy.results.service-port)
+    - name: tools-image
+      value: $(tasks.setup.results.tools-image)
+    runAfter:
+    - health
+    taskRef:
+      kind: Task
+      name: ibm-gradle-pact-verify-v2-0-1
+  - name: tag-release
+    params:
+    - name: git-url
+      value: $(tasks.setup.results.git-url)
+    - name: git-revision
+      value: $(tasks.setup.results.git-revision)
+    - name: source-dir
+      value: $(tasks.setup.results.source-dir)
+    - name: js-image
+      value: $(tasks.setup.results.js-image)
+    runAfter:
+    - pact-verify
+    taskRef:
+      kind: Task
+      name: ibm-tag-release-v2-0-1
+  - name: img-release
+    params:
+    - name: image-from
+      value: $(tasks.setup.results.image-url)
+    - name: image-to
+      value: $(tasks.setup.results.image-release):$(tasks.tag-release.results.tag)
+    runAfter:
+    - tag-release
+    taskRef:
+      kind: Task
+      name: ibm-img-release-v2-0-1
+  - name: scan
+    params:
+    - name: image-url
+      value: $(tasks.img-release.results.image-url)
+    - name: scan-image
+      value: $(params.scan-image)
+    runAfter:
+    - img-release
+    taskRef:
+      kind: Task
+      name: ibm-img-scan-ibm-v2-0-1
+  - name: helm-release
+    params:
+    - name: git-url
+      value: $(tasks.setup.results.git-url)
+    - name: git-revision
+      value: $(tasks.setup.results.git-revision)
+    - name: source-dir
+      value: $(tasks.setup.results.source-dir)
+    - name: image-url
+      value: $(tasks.img-release.results.image-url)
+    - name: app-name
+      value: $(tasks.setup.results.app-name)
+    - name: deploy-ingress-type
+      value: $(tasks.setup.results.deploy-ingress-type)
+    - name: tools-image
+      value: $(tasks.setup.results.tools-image)
+    runAfter:
+    - scan
+    taskRef:
+      kind: Task
+      name: ibm-helm-release-v2-0-1
+  - name: gitops
+    params:
+    - name: app-name
+      value: $(tasks.setup.results.app-name)
+    - name: version
+      value: $(tasks.tag-release.results.tag)
+    - name: helm-url
+      value: $(tasks.helm-release.results.helm-url)
+    - name: tools-image
+      value: $(tasks.setup.results.tools-image)
+    runAfter:
+    - helm-release
+    taskRef:
+      kind: Task
+      name: ibm-gitops-v2-0-1      

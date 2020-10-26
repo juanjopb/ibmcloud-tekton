@@ -146,32 +146,32 @@ spec:
       ibmcloud login --apikey ${IBM_CLOUD_APIKEY} -r ${IBM_CLOUD_REGION}
       ibmcloud target -r ${IBM_CLOUD_REGION}
       echo "****Service Instance"
-      SERVICE_INSTANCE=$(ibmcloud resource service-instance ${KEY_NAME}-srv --id | grep "::" | awk {'print $2'})
-      echo "****Getting ID PRIVATE Key"
-      PRIVATE_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true )
-      ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private"
-      echo "****Getting ID PUBLIC Key"
-      PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true )
-      ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public"
-      ibmcloud kp key unwrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PRIVATE} --output json | jq -r '.["Plaintext"]' > PRIVATE_B64.b64
-      ibmcloud kp key unwrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PUBLIC} --output json | jq -r '.["Plaintext"]' > PUBLIC_B64.b64
-      ls -lrth
-      echo "****Base64 Keys"
-      openssl enc -base64 -A -d -in PRIVATE_B64.b64 -out ${KEY_NAME}Private.pem
-      openssl enc -base64 -A -d -in PUBLIC_B64.b64 -out ${KEY_NAME}Pub.pub
-      ls -lrth
-      cd ..
+      #SERVICE_INSTANCE=$(ibmcloud resource service-instance ${KEY_NAME}-srv --id | grep "::" | awk {'print $2'})
+      #echo "****Getting ID PRIVATE Key"
+      #PRIVATE_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true )
+      #ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private"
+      #echo "****Getting ID PUBLIC Key"
+      #PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true )
+      #ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public"
+      #ibmcloud kp key unwrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PRIVATE} --output json | jq -r '.["Plaintext"]' > PRIVATE_B64.b64
+      #ibmcloud kp key unwrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PUBLIC} --output json | jq -r '.["Plaintext"]' > PUBLIC_B64.b64
+      #ls -lrth
+      #echo "****Base64 Keys"
+      #openssl enc -base64 -A -d -in PRIVATE_B64.b64 -out ${KEY_NAME}Private.pem
+      #openssl enc -base64 -A -d -in PUBLIC_B64.b64 -out ${KEY_NAME}Pub.pub
+      #ls -lrth
+      #cd ..
 
       APP_IMAGE="$(params.image-server)/$(params.image-namespace)/$(params.image-repository):$(params.image-tag)"
-      buildah --layers --storage-driver=$(params.STORAGE_DRIVER) bud --format=$(params.FORMAT) --tls-verify=$(params.TLSVERIFY) -f $(params.DOCKERFILE) -t ${APP_IMAGE} $(params.CONTEXT)
+      buildah --layers --storage-driver=$(params.STORAGE_DRIVER) bud --format=$(params.FORMAT) --tls-verify=$(params.TLSVERIFY) -f $(params.DOCKERFILE) -t ${APP_IMAGE}.original $(params.CONTEXT)
       set +x
       if [[ -n "${REGISTRY_USER}" ]] && [[ -n "${REGISTRY_PASSWORD}" ]] && [[ "$(params.image-server)" != "image-registry.openshift-image-registry.svc:5000"  ]]; then
         buildah login -u "${REGISTRY_USER}" -p "${REGISTRY_PASSWORD}" "$(params.image-server)"
         echo "buildah login -u "${REGISTRY_USER}" -p "xxxxx" "$(params.image-server)""
       fi
       set -x
-      buildah --storage-driver=$(params.STORAGE_DRIVER) push --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE} docker://${APP_IMAGE}
-      skopeo inspect --tls-verify=false docker://${APP_IMAGE}
+      buildah --storage-driver=$(params.STORAGE_DRIVER) push --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE}.original docker://${APP_IMAGE}.original
+      skopeo inspect --tls-verify=false docker://${APP_IMAGE}.original
 
       cat >signsample <<EOF
             %echo Generating a basic OpenPGP key
@@ -220,17 +220,17 @@ spec:
       cat /etc/containers/registries.d/default.yaml
       ls -lsrt ~/.gnupg/
       echo "*********Export public key"
-      gpg --armor --export signsample@foo.bar > sign-sample.pub
-      SIGN_CA=$(cat sign-sample.pub)
-      REGISTRY_SERVER_FROM=$(echo "$(params.image-server)" | awk -F : '{print $1}')
+      gpg --armor --export signsample@foo.bar > ${KEY_NAME}Pub.pub
+      #SIGN_CA=$(cat sign-sample.pub)
+      #REGISTRY_SERVER_FROM=$(echo "$(params.image-server)" | awk -F : '{print $1}')
       #kubectl create configmap $(params.image-namespace)-registry-config --from-file=${REGISTRY_SERVER_FROM}..5000=sign-sample.pub -n openshift-config
       #kubectl get configmap -n openshift-config
       echo "*****SKOPEO with Sign and passhprase"
       echo "********************************************"
-      echo "********************************************"
-      skopeo copy --src-tls-verify=false --dest-tls-verify=false --insecure-policy --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.newsigned <<<$PASSPHRASE
+      skopeo copy --src-tls-verify=false --dest-tls-verify=false --insecure-policy --sign-by signsample@foo.bar docker://${APP_IMAGE}.original docker://${APP_IMAGE} <<<$PASSPHRASE
       tree -lrth /source/sigstore/
-      skopeo inspect --tls-verify=false docker://${APP_IMAGE}.newsigned
+      skopeo inspect --tls-verify=false docker://${APP_IMAGE}
+      kubectl create secret generic keyprotect-publickey --from-literal=name=signsample@foo.bar --from-file=publicKey=${KEY_NAME}Pub.pub
       
     securityContext:
       privileged: true
