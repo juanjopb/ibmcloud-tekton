@@ -35,7 +35,7 @@ spec:
   - default: ""
     name: image-release
     type: string    
-  - default: centos/tools:latest
+  - default: quay.io/buildah/stable:v1.15.0
     name: BUILDER_IMAGE
     type: string
   - default: ./Dockerfile
