@@ -230,6 +230,7 @@ spec:
       skopeo copy --src-tls-verify=false --dest-tls-verify=false --insecure-policy --sign-by signsample@foo.bar docker://${APP_IMAGE}.original docker://${APP_IMAGE} <<<$PASSPHRASE
       tree -lrth /source/sigstore/
       skopeo inspect --tls-verify=false docker://${APP_IMAGE}
+      kubectl delete secret keyprotect-publickey --ignore-not-found
       kubectl create secret generic keyprotect-publickey --from-literal=name=signsample@foo.bar --from-file=publicKey=${KEY_NAME}Pub.pub
       
     securityContext:
