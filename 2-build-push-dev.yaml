@@ -137,7 +137,7 @@ spec:
     script: |
       #!/bin/bash
       KEY_NAME=$(params.image-namespace)
-      yum install skopeo jq gnupg2-smime buildah -y
+      yum install skopeo jq gnupg2-smime tree -y
       curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
       curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
       chmod +x ./kubectl; sudo mv ./kubectl /usr/local/bin/kubectl; kubectl version --client      
@@ -191,7 +191,6 @@ spec:
             %echo done
       EOF
       PASSPHRASE=abc
-      
       export GPG_TTY=$(tty)      
       cat ~/.gnupg/gpg.conf
       echo "*****Create gpg-agent.conf"
@@ -223,23 +222,15 @@ spec:
       echo "*********Export public key"
       gpg --armor --export signsample@foo.bar > sign-sample.pub
       SIGN_CA=$(cat sign-sample.pub)
-      echo "*********PRINT public key"
-      echo "${SIGN_CA}"
-      #echo "*****REstart Agent"
-      #echo RELOADAGENT | gpg-connect-agent
-      #echo "*****Create ConfigMap"
       REGISTRY_SERVER_FROM=$(echo "$(params.image-server)" | awk -F : '{print $1}')
       #kubectl create configmap $(params.image-namespace)-registry-config --from-file=${REGISTRY_SERVER_FROM}..5000=sign-sample.pub -n openshift-config
       #kubectl get configmap -n openshift-config
-      #echo "CHECK"
-      #skopeo delete --force docker://image-registry.openshift-image-registry.svc:5000/dev-freelancer/dev-signing-sample-spring:3e69
-      #skopeo delete --force docker://image-registry.openshift-image-registry.svc:5000/dev-freelancer/dev-signing-sample-spring:3e69
-
       echo "*****SKOPEO with Sign and passhprase"
       echo "********************************************"
       echo "********************************************"
       skopeo copy --src-tls-verify=false --dest-tls-verify=false --insecure-policy --sign-by signsample@foo.bar docker://${APP_IMAGE} docker://${APP_IMAGE}.newsigned <<<$PASSPHRASE
-      ls -lrth /source/sigstore/
+      tree -lrth /source/sigstore/
+      skopeo inspect --tls-verify=false docker://${APP_IMAGE}.newsigned
       
     securityContext:
       privileged: true
