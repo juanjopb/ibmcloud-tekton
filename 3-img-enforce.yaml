@@ -137,6 +137,12 @@ spec:
         kubectl apply -f securityPolicy.yaml -n $(params.image-namespace) 
         kubectl get ImagePolicy -n $(params.image-namespace)
         kubectl get ClusterImagePolicy
+        REGISTRY_SERVER_FROM=$(echo "$(params.image-server)" | awk -F : '{print $1}')
+        mkdir -p /etc/docker/certs.d/$(params.image-server)
+        kubectl delete configmap registry-cas -n openshift-config
+        kubectl cp -n openshift-image-registry $(kubectl get pod -n openshift-image-registry | grep node | awk '{print $1}' | tail -1):/etc/docker/certs.d/$(params.image-server)/ca.crt /etc/docker/certs.d/$(params.image-server)/ca.crt
+        kubectl create configmap registry-cas -n openshift-config --from-file=${REGISTRY_SERVER_FROM}..5000=/etc/docker/certs.d/$(params.image-server)/ca.crt
+        kubectl patch image.config.openshift.io/cluster --patch '{"spec":{"additionalTrustedCA":{"name":"registry-cas"}}}' --type=merge
 
     - name: scan-image
       image: $(params.tools-image)
