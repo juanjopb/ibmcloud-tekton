@@ -223,8 +223,8 @@ spec:
       gpg --armor --export signsample@foo.bar > ${KEY_NAME}Pub.pub
       #SIGN_CA=$(cat sign-sample.pub)
       REGISTRY_SERVER_FROM=$(echo "$(params.image-server)" | awk -F : '{print $1}')
-      kubectl delete configmap $(params.image-namespace)-registry-config
-      kubectl create configmap $(params.image-namespace)-registry-config --from-file=${REGISTRY_SERVER_FROM}..5000=sign-sample.pub -n openshift-config
+      kubectl delete configmap $(params.image-namespace)-registry-config -n openshift-config --ignore-not-found
+      kubectl create configmap $(params.image-namespace)-registry-config --from-file=${REGISTRY_SERVER_FROM}..5000=${KEY_NAME}Pub.pub -n openshift-config
       kubectl get configmap -n openshift-config
       echo "*****SKOPEO with Sign and passhprase"
       echo "********************************************"
