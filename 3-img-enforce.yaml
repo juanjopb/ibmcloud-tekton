@@ -133,7 +133,7 @@ spec:
                   enabled: false
         EOF
         cat securityPolicy.yaml
-        kubectl get ImagePolicy -n $(params.image-namespace) ibmcloud-$(params.app-name)-image-enforce-policy | kubectl delete ImagePolicy -n $(params.image-namespace) ibmcloud-$(params.app-name)-image-enforce-policy
+        #kubectl get ImagePolicy -n $(params.image-namespace) ibmcloud-$(params.app-name)-image-enforce-policy | kubectl delete ImagePolicy -n $(params.image-namespace) ibmcloud-$(params.app-name)-image-enforce-policy
         kubectl apply -f securityPolicy.yaml -n $(params.image-namespace) 
         kubectl get ImagePolicy -n $(params.image-namespace)
         kubectl get ClusterImagePolicy
