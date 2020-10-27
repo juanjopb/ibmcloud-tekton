@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: ibm-deploy-v2-0-1
+  name: ibm-deploy-dev-v2-0-1
   annotations:
     description: Deploys the application to the CI environment for verification using the provided helm chart
     app.openshift.io/description: Deploys the application to the CI environment for verification using the provided helm chart
@@ -86,7 +86,7 @@ spec:
               optional: true
       script: |
           #!/usr/bin/env bash
-          set -ex
+          #set -ex
           GIT_URL="$(params.git-url)"
           GIT_REVISION="$(params.git-revision)"
           APP_NAMESPACE="$(params.app-namespace)"

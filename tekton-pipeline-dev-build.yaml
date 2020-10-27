@@ -150,7 +150,7 @@ spec:
     - setup
     taskRef:
       kind: Task
-      name: ibm-deploy-v2-0-1
+      name: ibm-deploy-dev-v2-0-1
   - name: health
     params:
     - name: app-namespace
