@@ -222,9 +222,10 @@ spec:
       echo "*********Export public key"
       gpg --armor --export signsample@foo.bar > ${KEY_NAME}Pub.pub
       #SIGN_CA=$(cat sign-sample.pub)
-      #REGISTRY_SERVER_FROM=$(echo "$(params.image-server)" | awk -F : '{print $1}')
-      #kubectl create configmap $(params.image-namespace)-registry-config --from-file=${REGISTRY_SERVER_FROM}..5000=sign-sample.pub -n openshift-config
-      #kubectl get configmap -n openshift-config
+      REGISTRY_SERVER_FROM=$(echo "$(params.image-server)" | awk -F : '{print $1}')
+      kubectl delete configmap $(params.image-namespace)-registry-config
+      kubectl create configmap $(params.image-namespace)-registry-config --from-file=${REGISTRY_SERVER_FROM}..5000=sign-sample.pub -n openshift-config
+      kubectl get configmap -n openshift-config
       echo "*****SKOPEO with Sign and passhprase"
       echo "********************************************"
       skopeo copy --src-tls-verify=false --dest-tls-verify=false --insecure-policy --sign-by signsample@foo.bar docker://${APP_IMAGE}.original docker://${APP_IMAGE} <<<$PASSPHRASE
