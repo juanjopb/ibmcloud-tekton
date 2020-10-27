@@ -107,7 +107,9 @@ spec:
             ROUTE_ENABLED="false"
             INGRESS_ENABLED="true"
           fi
-
+          echo "**************List CurrentPath"
+          ls -lrth
+          cat ./chart/base/Chart.yaml
           export CHART_ROOT=$(find . -name chart)
           echo "CHART_ROOT: $CHART_ROOT"
 
@@ -123,9 +125,9 @@ spec:
           if [[ "${CHART_NAME}" != "${APP_NAME}" ]]; then
             echo "Renaming chart from ${CHART_NAME} to ${APP_NAME}"
             cp -R "${CHART_ROOT}/${CHART_NAME}" "${CHART_ROOT}/${APP_NAME}"
-            echo "listing "${CHART_ROOT}/${CHART_NAME}""
+            echo "**********listing "${CHART_ROOT}/${CHART_NAME}""
             ls -lrth "${CHART_ROOT}/${CHART_NAME}"
-            echo "listing "${CHART_ROOT}/${APP_NAME}""
+            echo "********listing "${CHART_ROOT}/${APP_NAME}""
             ls -lrth "${CHART_ROOT}/${APP_NAME}"
             cat "${CHART_ROOT}/${CHART_NAME}/Chart.yaml" | \
                 yq w - apiVersion "v1" | \
