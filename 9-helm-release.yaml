@@ -104,7 +104,7 @@ spec:
               optional: true
       script: |
           #!/usr/bin/env bash
-          set -ex
+          #set -ex
 
           echo "1. Package Helm Chart"
 
@@ -205,11 +205,12 @@ spec:
 
             echo "Check if a Generic Local Repo has been created and retrieve the URL for it on ${ARTIFACTORY_URL}/artifactory/api/repositories?type=LOCAL"
             export URL=$(curl -s -u${ARTIFACTORY_USER}:${ARTIFACTORY_PASSWORD} -X GET "${ARTIFACTORY_URL}/artifactory/api/repositories?type=LOCAL" | jq -r '.[0].url')
+            export URL_NOAUTH=$(curl -s -X GET "${ARTIFACTORY_URL}/artifactory/api/repositories?type=LOCAL" | jq -r '.[0].url')
             echo "Helm repo url: ${URL}"
 
             # Check if the URL is valid and we can continue
             set -x
-            if [ -n "${URL}" ]; then
+            if [ -n "${URL}" ] || [ -n "${URL_NOAUTH}" ] ; then
                 echo "Successfully read Repo ${URL}"
                 HELM_URL=${URL}
                 HELM_USER="${ARTIFACTORY_USER}"
