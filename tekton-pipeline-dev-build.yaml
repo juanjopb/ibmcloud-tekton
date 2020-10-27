@@ -246,7 +246,7 @@ spec:
     - scan
     taskRef:
       kind: Task
-      name: ibm-helm-release-v2-0-1
+      name: ibm-helm-release-dev-v2-0-1
   - name: gitops
     params:
     - name: app-name
