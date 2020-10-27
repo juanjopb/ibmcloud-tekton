@@ -211,12 +211,20 @@ spec:
             # Check if the URL is valid and we can continue
             set -x
             if [ -n "${URL}" ] || [ -n "${URL_NOAUTH}" ] ; then
+              if [ -n "${URL}" ] ; then
                 echo "Successfully read Repo ${URL}"
                 HELM_URL=${URL}
                 HELM_USER="${ARTIFACTORY_USER}"
                 set +x
                 HELM_PASSWORD="${ARTIFACTORY_ENCRYPT}"
                 set -x
+              else 
+                echo "Successfully read Repo ${URL_NOAUTH}"
+                HELM_URL=${URL_NOAUTH}
+                HELM_USER="${ARTIFACTORY_USER}"
+                set +x
+                HELM_PASSWORD="${ARTIFACTORY_ENCRYPT}"
+              fi
             else
                 echo "No Repository Created"
                 exit 1;
