@@ -121,7 +121,7 @@ spec:
 
           export CHART_NAME=$(cat $CHART | awk '/name:/ {print $2}')
           echo "CHART_NAME: $CHART_NAME"
-          echo "**********listing "${CHART_ROOT}/${CHART_NAME}"
+          echo "**********listing ${CHART_ROOT}/${CHART_NAME}"
 
           sudo mkdir -p ${CHART_ROOT}/${APP_NAME}
           sudo chmod 777 ${CHART_ROOT}/${APP_NAME}
