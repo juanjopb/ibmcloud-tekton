@@ -67,3 +67,5 @@ echo "********************************************"
 echo "********************************************"
 #--registries.d=/source/sigstore/
 skopeo copy --debug --dest-creds=juanjosepb:Pillin52 --insecure-policy --src-tls-verify=false --dest-tls-verify=false --sign-by signsample@foo.bar docker://juanjosepb/nginx:1.0 docker://docker.io/juanjosepb/signedimage:3.0.signed <<<$PASSPHRASE
+
+ls /etc/pki/ca-trust/source/anchors/
