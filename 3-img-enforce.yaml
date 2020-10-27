@@ -108,9 +108,8 @@ spec:
         helm init --client-only 1> /dev/null 2> /dev/null
         helm version --client
         helm repo add iks-charts https://icr.io/helm/iks-charts
-
         helm status cise || helm install --name cise iks-charts/ibmcloud-image-enforcement
-        sleep 30
+        #sleep 30
         #kubectl delete ClusterImagePolicy ibmcloud-default-cluster-image-policy --ignore-not-found=true
         
         APP_IMAGE="$(params.image-server)/$(params.image-namespace)"
@@ -139,8 +138,11 @@ spec:
         kubectl get ClusterImagePolicy
         REGISTRY_SERVER_FROM=$(echo "$(params.image-server)" | awk -F : '{print $1}')
         mkdir -p /etc/docker/certs.d/$(params.image-server)
-        kubectl delete configmap registry-cas -n openshift-config
-        kubectl cp -n openshift-image-registry $(kubectl get pod -n openshift-image-registry | grep node | awk '{print $1}' | tail -1):/etc/docker/certs.d/$(params.image-server)/ca.crt /etc/docker/certs.d/$(params.image-server)/ca.crt
+        #kubectl get configmap registry-cas -n openshift-config | kubectl delete configmap registry-cas -n openshift-config
+        kubectl get pod -n openshift-image-registry | grep node | awk '{print $1}' | tail -1
+        REGISTRY_POD=$(kubectl get pod -n openshift-image-registry | grep node | awk '{print $1}' | tail -1)
+        echo " Registry POD ${REGISTRY_POD}"
+        kubectl cp -n openshift-image-registry ${REGISTRY_POD}:/etc/docker/certs.d/$(params.image-server)/ca.crt /etc/docker/certs.d/$(params.image-server)/ca.crt
         kubectl create configmap registry-cas -n openshift-config --from-file=${REGISTRY_SERVER_FROM}..5000=/etc/docker/certs.d/$(params.image-server)/ca.crt
         kubectl patch image.config.openshift.io/cluster --patch '{"spec":{"additionalTrustedCA":{"name":"registry-cas"}}}' --type=merge
 
