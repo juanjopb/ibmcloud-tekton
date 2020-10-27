@@ -143,8 +143,9 @@ spec:
         kubectl get pod -n openshift-image-registry | grep node | awk '{print $1}' | tail -1
         REGISTRY_POD=$(kubectl get pod -n openshift-image-registry | grep node | awk '{print $1}' | tail -1)
         echo " Registry POD ${REGISTRY_POD}"
-        kubectl cp -n openshift-image-registry ${REGISTRY_POD}:/etc/docker/certs.d/$(params.image-server)/ca.crt  ~/ca.crt
-        kubectl create configmap registry-cas -n openshift-config --from-file=${REGISTRY_SERVER_FROM}..5000=~/ca.crt
+        kubectl cp -n openshift-image-registry ${REGISTRY_POD}:/etc/docker/certs.d/$(params.image-server)/ca.crt ca.crt
+        ls -lrth
+        kubectl create configmap registry-cas -n openshift-config --from-file=${REGISTRY_SERVER_FROM}..5000=ca.crt
         kubectl patch image.config.openshift.io/cluster --patch '{"spec":{"additionalTrustedCA":{"name":"registry-cas"}}}' --type=merge
 
     - name: scan-image
