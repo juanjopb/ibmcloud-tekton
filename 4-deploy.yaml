@@ -2,6 +2,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: ibm-deploy-dev-v2-0-1
+  namespace: dev-freelancer
   annotations:
     description: Deploys the application to the CI environment for verification using the provided helm chart
     app.openshift.io/description: Deploys the application to the CI environment for verification using the provided helm chart
@@ -128,10 +129,10 @@ spec:
           if [[ "${CHART_NAME}" != "${APP_NAME}" ]]; then
             echo "Renaming chart from ${CHART_NAME} to ${APP_NAME}"
             cp -R "${CHART_ROOT}/${CHART_NAME}" "${CHART_ROOT}/${APP_NAME}"
-            echo "**********listing "${CHART_ROOT}/${CHART_NAME}"
-            ls -lrth "${CHART_ROOT}/${CHART_NAME}"
-            echo "********listing "${CHART_ROOT}/${APP_NAME}"
-            ls -lrth "${CHART_ROOT}/${APP_NAME}"
+            echo "**********listing ${CHART_ROOT}/${CHART_NAME}"
+            ls -lrth ${CHART_ROOT}/${CHART_NAME}
+            echo "********listing ${CHART_ROOT}/${APP_NAME}"
+            ls -lrth ${CHART_ROOT}/${APP_NAME}
             cat "${CHART_ROOT}/${CHART_NAME}/Chart.yaml" | \
                 yq w - apiVersion "v1" | \
                 yq w - name "${APP_NAME}" | \
