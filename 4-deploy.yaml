@@ -118,7 +118,7 @@ spec:
           echo "CHART_NAME: $CHART_NAME"
 
           sudo mkdir -p ${CHART_ROOT}/${APP_NAME}
-          chown 777 ${CHART_ROOT}/${APP_NAME}
+          sudo chmod 777 ${CHART_ROOT}/${APP_NAME}
           # Update Chart name and version
           if [[ "${CHART_NAME}" != "${APP_NAME}" ]]; then
             echo "Renaming chart from ${CHART_NAME} to ${APP_NAME}"
