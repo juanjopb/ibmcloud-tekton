@@ -130,19 +130,25 @@ spec:
             echo "Renaming chart from ${CHART_NAME} to ${APP_NAME}"
             cp -R "${CHART_ROOT}/${CHART_NAME}" "${CHART_ROOT}/${APP_NAME}"
             echo "**********listing ${CHART_ROOT}/${CHART_NAME}"
-            ls -lrth ${CHART_ROOT}/${CHART_NAME}
+            ls -lrth ${CHART_ROOT}/${CHART_NAME}/
             echo "********listing ${CHART_ROOT}/${APP_NAME}"
             ls -lrth ${CHART_ROOT}/${APP_NAME}
+            echo "********listing ${CHART_ROOT}/${APP_NAME}/${CHART_NAME}"
+            ls -lrth ${CHART_ROOT}/${APP_NAME}/${CHART_NAME}
             cat "${CHART_ROOT}/${CHART_NAME}/Chart.yaml" | \
                 yq w - apiVersion "v1" | \
                 yq w - name "${APP_NAME}" | \
                 yq w - version "1.0.0-rc${IMAGE_VERSION}" > "${CHART_ROOT}/${APP_NAME}/Chart.yaml"
             cat "${CHART_ROOT}/${CHART_NAME}/Chart.yaml"
+            echo "********listing Second ${CHART_ROOT}/${APP_NAME}"
+            ls -lrth ${CHART_ROOT}/${APP_NAME}
+            echo "********listing Second ${CHART_ROOT}/${APP_NAME}/${CHART_NAME}"
+            ls -lrth ${CHART_ROOT}/${APP_NAME}/${CHART_NAME}            
           else
             echo "Chart name and image name match: ${APP_NAME}"
           fi
 
-          CHART_PATH="${CHART_ROOT}/${APP_NAME}"
+          CHART_PATH="${CHART_ROOT}/${APP_NAME}/${CHART_NAME}"
 
           RELEASE_NAME="${APP_NAME}"
           echo "RELEASE_NAME: $RELEASE_NAME"
