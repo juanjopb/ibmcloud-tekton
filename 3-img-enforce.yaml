@@ -95,23 +95,10 @@ spec:
         KEY_NAME=$(params.image-namespace)
         ibmcloud plugin install key-protect -r "IBM Cloud"
         ibmcloud login --apikey ${IBM_CLOUD_APIKEY} -r ${IBM_CLOUD_REGION}
-        #oc policy add-role-to-user admin system:serviceaccount:dev-freelancer:pipeline -n kube-system
-        #oc policy add-role-to-user admin system:serviceaccount:kube-system:default -n dev-freelancer
-        #oc policy add-role-to-user admin system:serviceaccount:kube-system:default -n ibm-system
-        #SERVICE_INSTANCE=$(ibmcloud resource service-instance ${KEY_NAME}-srv --id | grep "::" | awk {'print $2'})
-        #ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
-        #PRIVATE_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true )
-        #PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true )
-        #ibmcloud kp key unwrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PRIVATE} --output json | jq -r '.["Plaintext"]' > PRIVATE_B64.b64
-        #ibmcloud kp key unwrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PUBLIC} --output json | jq -r '.["Plaintext"]' > PUBLIC_B64.b64
-        #openssl enc -base64 -A -d -in PUBLIC_B64.b64 -out ${KEY_NAME}Pub.pub
-        #echo "INITIALIZING helm with client-only (no Tiller)"
         helm init --client-only 1> /dev/null 2> /dev/null
         helm version --client
         helm repo add iks-charts https://icr.io/helm/iks-charts
         helm status cise || helm install --name cise iks-charts/ibmcloud-image-enforcement
-        #sleep 30
-        #kubectl delete ClusterImagePolicy ibmcloud-default-cluster-image-policy --ignore-not-found=true
         
         APP_IMAGE="$(params.image-server)/$(params.image-namespace)"
         echo ${APP_IMAGE}
@@ -139,7 +126,7 @@ spec:
         kubectl get ClusterImagePolicy
         REGISTRY_SERVER_FROM=$(echo "$(params.image-server)" | awk -F : '{print $1}')
         mkdir -p /etc/docker/certs.d/$(params.image-server)
-        #kubectl get configmap registry-cas -n openshift-config | kubectl delete configmap registry-cas -n openshift-config
+        kubectl delete configmap registry-cas -n openshift-config --ignore-not-found
         kubectl get pod -n openshift-image-registry | grep node | awk '{print $1}' | tail -1
         REGISTRY_POD=$(kubectl get pod -n openshift-image-registry | grep node | awk '{print $1}' | tail -1)
         echo " Registry POD ${REGISTRY_POD}"
@@ -147,12 +134,3 @@ spec:
         ls -lrth
         kubectl create configmap registry-cas -n openshift-config --from-file=${REGISTRY_SERVER_FROM}..5000=ca.crt
         kubectl patch image.config.openshift.io/cluster --patch '{"spec":{"additionalTrustedCA":{"name":"registry-cas"}}}' --type=merge
-
-    - name: scan-image
-      image: $(params.tools-image)
-      volumeMounts:
-        - mountPath: /var/oci
-          name: oci-image
-      script: |
-          set -e
-          PERFORM_SCAN="$(params.scan-image)"
