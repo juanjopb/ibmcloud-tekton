@@ -214,6 +214,28 @@ spec:
       kubectl delete configmap $(params.image-namespace)-registry-config -n openshift-config --ignore-not-found
       kubectl create configmap $(params.image-namespace)-registry-config --from-file=${REGISTRY_SERVER_FROM}..5000=${KEY_NAME}Pub.pub -n openshift-config
       kubectl get configmap -n openshift-config
+    
+      if [ -z "${PRIVATE_KEY}" ] && [ -z "${PUBLIC_KEY}" ] ; then 
+        echo "*****Keys are not created"
+      else 
+        echo "****Keys Already Exists, Retriving the information"
+        ibmcloud kp key delete --instance-id ${SERVICE_INSTANCE} ${PRIVATE_KEY}
+        ibmcloud kp key delete --instance-id ${SERVICE_INSTANCE} ${PUBLIC_KEY}
+      fi
+      echo "****Create Key's on Key Protect"
+      ibmcloud kp key create kp-${KEY_NAME}-private -i ${SERVICE_INSTANCE}
+      ibmcloud kp key create kp-${KEY_NAME}-public -i ${SERVICE_INSTANCE}
+      echo "***** GET VALUES"
+      PRIVATE_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true)
+      PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true )
+      echo "***** WRAPPING"
+      ibmcloud kp key wrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(echo ${KEY_NAME}Pub.pub | base64)" --output json | jq -r '.["Ciphertext"]' > PRIVATE_WRAP.pem
+      ibmcloud kp key wrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(echo ${KEY_NAME}Priv.key | base64)" --output json | jq -r '.["Ciphertext"]' > PUBLIC_WRAP.pub
+      kubectl delete secret keyprotect-wrap-public --ignore-not-found
+      kubectl delete secret keyprotect-wrap-private --ignore-not-found
+      kubectl create secret generic keyprotect-wrap-public --from-file=publicKey=PUBLIC_WRAP.pub
+      kubectl create secret generic keyprotect-wrap-private --from-file=privateKey=PRIVATE_WRAP.pem
+      ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
       echo "*****SKOPEO with Sign"
       echo "********************************************"
       skopeo copy --src-tls-verify=false --dest-tls-verify=false --insecure-policy --sign-by signsample@foo.bar docker://${APP_IMAGE}.original docker://${APP_IMAGE}
@@ -221,27 +243,6 @@ spec:
       skopeo inspect --tls-verify=false docker://${APP_IMAGE}
       kubectl delete secret keyprotect-publickey --ignore-not-found
       kubectl create secret generic keyprotect-publickey --from-literal=name=signsample@foo.bar --from-file=publicKey=${KEY_NAME}Pub.pub
-    
-      if [ -z "${PRIVATE_KEY}" ] && [ -z "${PUBLIC_KEY}" ] ; then 
-        echo "****Create Key's on Key Protect"
-        ibmcloud kp key create kp-${KEY_NAME}-private -i ${SERVICE_INSTANCE}
-        ibmcloud kp key create kp-${KEY_NAME}-public -i ${SERVICE_INSTANCE}
-        echo "***** GET VALUES"
-        PRIVATE_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true)
-        PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true )
-        echo "***** WRAPPING"
-        ibmcloud kp key wrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(echo ${KEY_NAME}Pub.pub | base64)" --output json | jq -r '.["Ciphertext"]' > PRIVATE_WRAP.pem
-        ibmcloud kp key wrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} -p "$(echo ${KEY_NAME}Priv.key | base64)" --output json | jq -r '.["Ciphertext"]' > PUBLIC_WRAP.pub
-        kubectl create secret generic keyprotect-wrap-public --from-file=publicKey=PUBLIC_WRAP.pub
-        kubectl create secret generic keyprotect-wrap-private --from-file=privateKey=PRIVATE_WRAP.pem
-      else 
-        echo "Keys Already Exists, Retriving the information"
-        ibmcloud kp key unwrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PRIVATE} --output json | jq -r '.["Plaintext"]' > PRIVATE_B64.b64
-        ibmcloud kp key unwrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PUBLIC} --output json | jq -r '.["Plaintext"]' > PUBLIC_B64.b64
-        openssl enc -base64 -A -d -in PRIVATE_B64.b64 -out ${KEY_NAME}Private.pem
-        openssl enc -base64 -A -d -in PUBLIC_B64.b64 -out ${KEY_NAME}Pub.pub
-      fi
-      ibmcloud kp keys --instance-id ${SERVICE_INSTANCE}
       
     securityContext:
       privileged: true
