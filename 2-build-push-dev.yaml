@@ -135,33 +135,6 @@ spec:
     name: build
     resources: {}
     script: |
-      #!/bin/bash
-      KEY_NAME=$(params.image-namespace)
-      yum install skopeo jq gnupg2-smime tree -y
-      curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
-      curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
-      chmod +x ./kubectl; sudo mv ./kubectl /usr/local/bin/kubectl; kubectl version --client      
-      mkdir user_keys; cd user_keys
-      ibmcloud plugin install key-protect -r "IBM Cloud"
-      ibmcloud login --apikey ${IBM_CLOUD_APIKEY} -r ${IBM_CLOUD_REGION}
-      ibmcloud target -r ${IBM_CLOUD_REGION}
-      echo "****Service Instance"
-      #SERVICE_INSTANCE=$(ibmcloud resource service-instance ${KEY_NAME}-srv --id | grep "::" | awk {'print $2'})
-      #echo "****Getting ID PRIVATE Key"
-      #PRIVATE_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private" | awk {'print $1'} || true )
-      #ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-private"
-      #echo "****Getting ID PUBLIC Key"
-      #PUBLIC_KEY=$(ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public" | awk {'print $1'} || true )
-      #ibmcloud kp keys --instance-id ${SERVICE_INSTANCE} | grep "kp-${KEY_NAME}-public"
-      #ibmcloud kp key unwrap ${PRIVATE_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PRIVATE} --output json | jq -r '.["Plaintext"]' > PRIVATE_B64.b64
-      #ibmcloud kp key unwrap ${PUBLIC_KEY} --instance-id ${SERVICE_INSTANCE} ${KEYPROTECT_WRAP_PUBLIC} --output json | jq -r '.["Plaintext"]' > PUBLIC_B64.b64
-      #ls -lrth
-      #echo "****Base64 Keys"
-      #openssl enc -base64 -A -d -in PRIVATE_B64.b64 -out ${KEY_NAME}Private.pem
-      #openssl enc -base64 -A -d -in PUBLIC_B64.b64 -out ${KEY_NAME}Pub.pub
-      #ls -lrth
-      cd ..
-
       APP_IMAGE="$(params.image-server)/$(params.image-namespace)/$(params.image-repository):$(params.image-tag)"
       buildah --layers --storage-driver=$(params.STORAGE_DRIVER) bud --format=$(params.FORMAT) --tls-verify=$(params.TLSVERIFY) -f $(params.DOCKERFILE) -t ${APP_IMAGE}.original $(params.CONTEXT)
       set +x
@@ -171,69 +144,6 @@ spec:
       fi
       set -x
       buildah --storage-driver=$(params.STORAGE_DRIVER) push --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${APP_IMAGE}.original docker://${APP_IMAGE}.original
-      skopeo inspect --tls-verify=false docker://${APP_IMAGE}
-
-      cat >signsample <<EOF
-            %echo Generating a basic OpenPGP key
-            %no-protection
-            Key-Type: DSA
-            Key-Length: 1024
-            Subkey-Type: ELG-E
-            Subkey-Length: 1024
-            Name-Real: SignSample
-            Name-Email: signsample@foo.bar
-            Expire-Date: 0
-            Passphrase: abc
-            %pubring signsample.pub
-            %secring signsample.sec
-            # Do a commit here, so that we can later print "done" :-)
-            %commit
-            %echo done
-      EOF
-      PASSPHRASE=abc
-      export GPG_TTY=$(tty)      
-      cat ~/.gnupg/gpg.conf
-      echo "*****Create gpg-agent.conf"
-      cat >/etc/gnupg/gpg-agent.conf <<EOF
-            pinentry-program /usr/bin/pinentry-curses
-            allow-loopback-pinentry
-      EOF
-      echo "*****Create gpg.conf"
-      cat >~/.gnupg/gpg.conf <<EOF
-            use-agent 
-            pinentry-mode loopback
-      EOF
-      gpg --batch -v --gen-key signsample
-      echo "*********Import the Public GPG to Keystore"
-      gpg --import signsample.pub
-      echo "*********List Secret Keys"
-      gpg --list-secret-keys
-      echo "*********List Keys"
-      gpg --list-keys
-      echo "*********Make sigstore"
-      mkdir -p /source/sigstore/
-      chmod 777 /source/sigstore/
-      echo "*********Make sigstore "
-      echo "*********Change Path Sigstore"
-      sed -i "s/var\/lib\/containers\/sigstore/source\/sigstore/g" /etc/containers/registries.d/default.yaml
-      echo "*********Make sigstore"
-      cat /etc/containers/registries.d/default.yaml
-      ls -lsrt ~/.gnupg/
-      echo "*********Export public key"
-      gpg --armor --export signsample@foo.bar > ${KEY_NAME}Pub.pub
-      #SIGN_CA=$(cat sign-sample.pub)
-      REGISTRY_SERVER_FROM=$(echo "$(params.image-server)" | awk -F : '{print $1}')
-      kubectl delete configmap $(params.image-namespace)-registry-config -n openshift-config --ignore-not-found
-      kubectl create configmap $(params.image-namespace)-registry-config --from-file=${REGISTRY_SERVER_FROM}..5000=${KEY_NAME}Pub.pub -n openshift-config
-      kubectl get configmap -n openshift-config
-      echo "*****SKOPEO with Sign and passhprase"
-      echo "********************************************"
-      skopeo copy --src-tls-verify=false --dest-tls-verify=false --insecure-policy --sign-by signsample@foo.bar docker://${APP_IMAGE}.original docker://${APP_IMAGE} <<<$PASSPHRASE
-      tree -lrth /source/sigstore/
-      skopeo inspect --tls-verify=false docker://${APP_IMAGE}
-      kubectl delete secret keyprotect-publickey --ignore-not-found
-      kubectl create secret generic keyprotect-publickey --from-literal=name=signsample@foo.bar --from-file=publicKey=${KEY_NAME}Pub.pub
-      
     securityContext:
       privileged: true
     volumeMounts:
